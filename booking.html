@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#7C3AED">
+<title>Agendamento Online — AgendaPro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ═══════════════════════════════════════════
+   TOKENS (espelha o index.html)
+═══════════════════════════════════════════ */
+:root {
+  --accent:       #7C3AED;
+  --accent-hover: #6D28D9;
+  --accent-light: #EDE9FE;
+  --accent-mid:   #A78BFA;
+  --accent-soft:  #F5F3FF;
+  --pink:         #EC4899;
+  --pink-light:   #FCE7F3;
+  --teal:         #0D9488;
+  --teal-light:   #CCFBF1;
+
+  --bg:           #F8F7FF;
+  --surface:      #FFFFFF;
+  --surface2:     #F3F2FB;
+  --surface3:     #EAE8F7;
+  --border:       #DDD9F5;
+  --border-strong:#BDB5F0;
+
+  --text:         #1A1235;
+  --text-muted:   #6B5E9A;
+  --text-light:   #9D8DC4;
+
+  --danger:       #DC2626;
+  --danger-bg:    #FEF2F2;
+  --success:      #059669;
+  --success-bg:   #ECFDF5;
+  --warning:      #D97706;
+  --warning-bg:   #FFFBEB;
+
+  --radius:       12px;
+  --radius-lg:    18px;
+  --shadow-sm:    0 1px 3px rgba(124,58,237,.08), 0 1px 2px rgba(124,58,237,.04);
+  --shadow-md:    0 4px 16px rgba(124,58,237,.10), 0 2px 6px rgba(124,58,237,.06);
+  --shadow-lg:    0 12px 40px rgba(124,58,237,.15), 0 4px 12px rgba(124,58,237,.08);
+  --mono: 'DM Mono', monospace;
+  --font: 'Plus Jakarta Sans', sans-serif;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { height:100%; scroll-behavior:smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════ */
+.header {
+  background: linear-gradient(160deg, #2D0A5E 0%, #4C1D95 50%, #7C3AED 100%);
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content:'';
+  position:absolute; top:-120px; right:-120px;
+  width:400px; height:400px; border-radius:50%;
+  background:radial-gradient(circle, rgba(236,72,153,.2) 0%, transparent 70%);
+  pointer-events:none;
+}
+.header::after {
+  content:'';
+  position:absolute; bottom:-80px; left:-80px;
+  width:300px; height:300px; border-radius:50%;
+  background:radial-gradient(circle, rgba(167,139,250,.15) 0%, transparent 70%);
+  pointer-events:none;
+}
+.header-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 36px 20px 32px;
+  position: relative; z-index:1;
+  display: flex; align-items: center; gap: 18px;
+}
+.negocio-av {
+  width: 72px; height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #A78BFA, #EC4899);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; font-weight: 800; color: white;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  border: 2px solid rgba(255,255,255,.2);
+}
+.negocio-info h1 {
+  font-size: 1.3rem; font-weight: 800; color: white;
+  line-height: 1.2; margin-bottom: 4px;
+}
+.negocio-desc {
+  font-size: .82rem; color: rgba(255,255,255,.65);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.negocio-meta {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.meta-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 999px; padding: 3px 10px;
+  font-size: .7rem; color: rgba(255,255,255,.75); font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════
+   STEPPER
+═══════════════════════════════════════════ */
+.stepper {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0;
+  padding: 20px 20px 0;
+  max-width: 680px;
+  margin: 0 auto;
+}
+.step {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex: 1;
+  position: relative;
+}
+.step:not(:last-child)::after {
+  content:'';
+  position:absolute;
+  top: 14px; left: calc(50% + 18px);
+  right: calc(-50% + 18px);
+  height: 2px;
+  background: var(--border);
+  transition: background .3s;
+}
+.step.done:not(:last-child)::after { background: var(--accent-mid); }
+.step-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .7rem; font-weight: 800; color: var(--text-light);
+  transition: all .3s;
+  z-index:1;
+}
+.step.active .step-dot {
+  border-color: var(--accent); background: var(--accent); color: white;
+  box-shadow: 0 0 0 4px rgba(124,58,237,.2);
+}
+.step.done .step-dot {
+  border-color: var(--accent); background: var(--accent); color: white;
+}
+.step-label {
+  font-size: .62rem; font-weight: 700; color: var(--text-light);
+  text-transform: uppercase; letter-spacing: .06em;
+  transition: color .3s;
+}
+.step.active .step-label, .step.done .step-label { color: var(--accent); }
+
+/* ═══════════════════════════════════════════
+   MAIN
+═══════════════════════════════════════════ */
+.main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-size: .95rem; font-weight: 800; color: var(--text);
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ═══════════════════════════════════════════
+   SERVIÇOS
+═══════════════════════════════════════════ */
+.servicos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.servico-card {
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  cursor: pointer;
+  transition: all .18s;
+  background: var(--surface);
+  position: relative;
+}
+.servico-card:hover { border-color: var(--accent-mid); background: var(--accent-soft); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.servico-card.selected { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 3px rgba(124,58,237,.15); }
+.servico-check {
+  position: absolute; top: 10px; right: 10px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .7rem;
+  transition: all .18s;
+}
+.servico-card.selected .servico-check { border-color: var(--accent); background: var(--accent); color: white; }
+.servico-nome { font-size: .88rem; font-weight: 700; color: var(--text); margin-bottom: 4px; padding-right: 24px; }
+.servico-meta { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.servico-preco { font-size: .9rem; font-weight: 800; color: var(--accent); }
+.servico-duracao { font-size: .72rem; color: var(--text-muted); font-family: var(--mono); }
+
+/* ═══════════════════════════════════════════
+   PROFISSIONAIS
+═══════════════════════════════════════════ */
+.prof-list {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.prof-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all .18s;
+  background: var(--surface);
+}
+.prof-option:hover { border-color: var(--accent-mid); background: var(--accent-soft); }
+.prof-option.selected { border-color: var(--accent); background: var(--accent-soft); }
+.prof-av {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; font-weight: 800; color: white;
+  flex-shrink: 0;
+}
+.prof-name { font-size: .88rem; font-weight: 700; color: var(--text); }
+.prof-spec { font-size: .72rem; color: var(--text-muted); margin-top: 1px; }
+.prof-check { margin-left: auto; font-size: .9rem; opacity: 0; transition: opacity .18s; }
+.prof-option.selected .prof-check { opacity: 1; }
+
+/* ═══════════════════════════════════════════
+   CALENDÁRIO
+═══════════════════════════════════════════ */
+.cal-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.cal-month { font-size: .92rem; font-weight: 800; color: var(--text); }
+.cal-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 12px;
+  cursor: pointer; font-size: .8rem; color: var(--text-muted);
+  font-family: var(--font); transition: all .15s;
+}
+.cal-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent-mid); }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+.cal-day-name { text-align:center; font-size:.62rem; font-weight:700; text-transform:uppercase; color:var(--text-light); padding:4px 0; }
+.cal-day {
+  aspect-ratio:1;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:8px; cursor:pointer; transition:all .15s;
+  font-size:.78rem; font-weight:500; color:var(--text-muted);
+  border: 1px solid transparent;
+}
+.cal-day:hover:not(.disabled) { background:var(--accent-light); color:var(--accent); }
+.cal-day.today { font-weight:800; color:var(--accent); border-color:var(--accent-mid); }
+.cal-day.selected { background:var(--accent); color:white; font-weight:800; box-shadow:0 2px 8px rgba(124,58,237,.35); }
+.cal-day.disabled { color:var(--border); cursor:not-allowed; pointer-events:none; }
+.cal-day.other-month { color:var(--text-light); opacity:.4; }
+.cal-day.has-slots { position:relative; }
+.cal-day.has-slots::after { content:''; position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--teal); }
+.cal-day.selected::after { background:rgba(255,255,255,.7); }
+
+/* ═══════════════════════════════════════════
+   HORÁRIOS
+═══════════════════════════════════════════ */
+.horarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+.horario-btn {
+  padding: 9px 4px;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  font-family: var(--mono);
+  font-size: .78rem; font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+}
+.horario-btn:hover:not(.ocupado) { border-color: var(--accent-mid); color: var(--accent); background: var(--accent-soft); }
+.horario-btn.selected { border-color: var(--accent); background: var(--accent); color: white; box-shadow: 0 2px 8px rgba(124,58,237,.3); }
+.horario-btn.ocupado { opacity: .4; cursor: not-allowed; text-decoration: line-through; }
+.horarios-empty { padding: 20px; text-align:center; color:var(--text-light); font-size:.85rem; }
+
+/* ═══════════════════════════════════════════
+   FORM CLIENTE
+═══════════════════════════════════════════ */
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.field { display:flex; flex-direction:column; gap:5px; }
+.field.span-2 { grid-column: span 2; }
+.field label { font-size:.74rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; }
+.field input, .field textarea, .field select {
+  padding: 10px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  font-family: var(--font);
+  font-size: .88rem;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  transition: all .15s;
+  width: 100%;
+}
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--accent-mid);
+  box-shadow: 0 0 0 3px rgba(124,58,237,.1);
+}
+.field textarea { resize: vertical; min-height: 72px; }
+
+/* ═══════════════════════════════════════════
+   RESUMO
+═══════════════════════════════════════════ */
+.resumo-box {
+  background: linear-gradient(135deg, var(--accent-soft), var(--pink-light));
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+.resumo-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(124,58,237,.1);
+  font-size: .84rem;
+}
+.resumo-row:last-child { border-bottom: none; }
+.resumo-row .label { color: var(--text-muted); font-weight: 500; }
+.resumo-row .valor { color: var(--text); font-weight: 700; }
+.resumo-total { font-size: 1.1rem; font-weight: 800; color: var(--accent); }
+
+/* ═══════════════════════════════════════════
+   BOTÕES
+═══════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-family: var(--font); font-size: .88rem; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+  border: 1.5px solid transparent;
+  line-height: 1;
+}
+.btn-primary {
+  background: var(--accent); color: white;
+  box-shadow: 0 3px 10px rgba(124,58,237,.35);
+}
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 5px 16px rgba(124,58,237,.45); }
+.btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+.btn-secondary { background: var(--surface2); color: var(--text-muted); border-color: var(--border); }
+.btn-secondary:hover { background: var(--surface3); color: var(--text); }
+.btn-full { width: 100%; }
+
+.actions {
+  display: flex; gap: 10px; justify-content: space-between;
+  padding-top: 4px;
+}
+
+/* ═══════════════════════════════════════════
+   SUCESSO
+═══════════════════════════════════════════ */
+.success-screen {
+  display: none;
+  flex-direction: column; align-items: center; text-align: center;
+  padding: 48px 24px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+.success-screen.show { display: flex; }
+.success-icon {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--success-bg);
+  border: 3px solid var(--success);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem;
+  margin-bottom: 20px;
+  animation: pop .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pop { from{transform:scale(.4);opacity:0} to{transform:scale(1);opacity:1} }
+.success-screen h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 8px; }
+.success-screen p  { font-size: .88rem; color: var(--text-muted); line-height: 1.6; max-width: 360px; }
+.success-detail {
+  margin: 20px 0;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  width: 100%;
+  max-width: 380px;
+  text-align: left;
+}
+.success-detail .row { display:flex; justify-content:space-between; padding:5px 0; font-size:.83rem; }
+.success-detail .row .l { color:var(--text-muted); }
+.success-detail .row .r { font-weight:700; }
+.whatsapp-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #25D366; color: white;
+  padding: 12px 24px; border-radius: 10px;
+  font-family: var(--font); font-size: .88rem; font-weight: 700;
+  cursor: pointer; border: none; text-decoration: none;
+  box-shadow: 0 3px 10px rgba(37,211,102,.4);
+  margin-top: 4px;
+  transition: all .15s;
+}
+.whatsapp-btn:hover { transform:translateY(-1px); box-shadow:0 5px 16px rgba(37,211,102,.5); }
+
+/* ═══════════════════════════════════════════
+   LOADING / ESTADOS
+═══════════════════════════════════════════ */
+.loading {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 48px;
+  color: var(--text-muted); font-size: .88rem;
+}
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-box {
+  background: var(--danger-bg); border: 1px solid #FECACA;
+  border-radius: var(--radius); padding: 14px 16px;
+  font-size: .83rem; color: var(--danger);
+  text-align: center;
+}
+.not-found {
+  text-align: center; padding: 60px 20px;
+}
+.not-found .emoji { font-size: 3rem; margin-bottom: 12px; }
+.not-found h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; }
+.not-found p  { font-size: .85rem; color: var(--text-muted); }
+
+/* ═══════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════ */
+.footer {
+  text-align: center; padding: 20px;
+  font-size: .72rem; color: var(--text-light);
+}
+.footer a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════════════════
+   MOBILE
+═══════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .header-inner { padding: 24px 16px 20px; }
+  .negocio-av { width: 56px; height: 56px; font-size: 1.5rem; border-radius: 16px; }
+  .main { padding: 16px 16px 48px; }
+  .servicos-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .field.span-2 { grid-column: span 1; }
+  .horarios-grid { grid-template-columns: repeat(4, 1fr); }
+  .actions { flex-direction: column-reverse; }
+  .actions .btn { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════
+     CONTEÚDO DINÂMICO
+════════════════════════════════ -->
+<div id="root">
+  <div class="loading" style="min-height:100vh;justify-content:center">
+    <div class="spinner"></div>
+    <span>Carregando...</span>
+  </div>
+</div>
+
+<div class="footer">
+  Powered by <a href="/" target="_blank">AgendaPro</a> — Sistema de Agendamentos
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONFIG SUPABASE
+// ═══════════════════════════════════════════
+const SUPABASE_URL = 'https://awdgnxwmzestfdfuabcb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3ZGdueHdtemVzdGZkZnVhYmNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NjIxMDQsImV4cCI6MjA5NDUzODEwNH0.NeFqVTqf7gSkfneH2GOJoYTVWi808vKM73Rvau6Z4ds';
+
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ═══════════════════════════════════════════
+//  ESTADO
+// ═══════════════════════════════════════════
+let negocio      = null;   // registro da tabela negocios
+let config       = {};     // configs_negocio.config
+let servicos     = [];
+let profissionais= [];
+let agendamentos = [];     // do mês atual p/ checar ocupados
+
+let sel = {
+  servico:     null,
+  profissional:null,
+  data:        null,
+  hora:        null,
+};
+
+let calAno = new Date().getFullYear();
+let calMes = new Date().getMonth();
+
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+// ═══════════════════════════════════════════
+//  UTILITÁRIOS
+// ═══════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const hoje = () => new Date().toISOString().slice(0,10);
+const moeda = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtData = d => d ? new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}) : '';
+
+function slug(s='') {
+  return s.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+}
+
+// ═══════════════════════════════════════════
+//  PEGAR SLUG DA URL
+// ═══════════════════════════════════════════
+function getSlugFromURL() {
+  // Suporta:
+  //   /agendar/meu-salao
+  //   /booking.html?slug=meu-salao
+  //   ?slug=meu-salao
+  const url = new URL(location.href);
+  const paramSlug = url.searchParams.get('slug');
+  if (paramSlug) return paramSlug;
+
+  const parts = location.pathname.split('/').filter(Boolean);
+  // /agendar/{slug}  ou  /{slug}
+  const agendarIdx = parts.indexOf('agendar');
+  if (agendarIdx !== -1 && parts[agendarIdx+1]) return parts[agendarIdx+1];
+  // último segmento que não seja um arquivo
+  const last = parts[parts.length-1];
+  if (last && !last.includes('.')) return last;
+  return null;
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+async function init() {
+  const slugNeg = getSlugFromURL();
+
+  if (!slugNeg) {
+    renderNotFound('Nenhum estabelecimento informado na URL.');
+    return;
+  }
+
+  try {
+    // Buscar negócios e tentar casar pelo slug do nome
+    const { data: negs, error } = await _sb.from('negocios').select('*').eq('status','ativo');
+    if (error) throw error;
+
+    // Encontrar pelo slug gerado a partir do nome
+    negocio = negs && negs.find(n => slug(n.name) === slugNeg);
+
+    if (!negocio) {
+      renderNotFound(`Estabelecimento "${slugNeg}" não encontrado.`);
+      return;
+    }
+
+    // Carregar dados em paralelo
+    const [svRes, prRes, cfgRes] = await Promise.all([
+      _sb.from('servicos').select('*').eq('company_id', negocio.id).eq('ativo', true),
+      _sb.from('profissionais').select('*').eq('company_id', negocio.id).eq('ativo', true),
+      _sb.from('configs_negocio').select('config').eq('company_id', negocio.id).single(),
+    ]);
+
+    servicos      = svRes.data  || [];
+    profissionais = prRes.data  || [];
+    config        = (cfgRes.data && cfgRes.data.config) || {};
+
+    // Atualizar <title>
+    document.title = `Agendar — ${negocio.name}`;
+
+    renderApp();
+  } catch(e) {
+    renderError('Não foi possível carregar. Tente novamente em instantes.');
+    console.error(e);
+  }
+}
+
+// ═══════════════════════════════════════════
+//  RENDER PRINCIPAL
+// ═══════════════════════════════════════════
+function renderApp() {
+  const root = document.getElementById('root');
+  root.innerHTML = `
+    <!-- Header -->
+    <div class="header">
+      <div class="header-inner">
+        <div class="negocio-av">${(negocio.name||'?')[0].toUpperCase()}</div>
+        <div class="negocio-info">
+          <h1>${negocio.name}</h1>
+          ${config.desc ? `<div class="negocio-desc">${config.desc}</div>` : ''}
+          <div class="negocio-meta">
+            ${config.hor  ? `<span class="meta-chip">🕐 ${config.hor}</span>` : ''}
+            ${config.end  ? `<span class="meta-chip">📍 ${config.end}</span>` : ''}
+            ${config.tel  ? `<span class="meta-chip">📱 ${config.tel}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stepper -->
+    <div class="stepper" id="stepper">
+      <div class="step active" id="step1"><div class="step-dot">1</div><div class="step-label">Serviço</div></div>
+      <div class="step" id="step2"><div class="step-dot">2</div><div class="step-label">Prof.</div></div>
+      <div class="step" id="step3"><div class="step-dot">3</div><div class="step-label">Data/Hora</div></div>
+      <div class="step" id="step4"><div class="step-dot">4</div><div class="step-label">Confirmar</div></div>
+    </div>
+
+    <!-- Conteúdo de cada step -->
+    <div class="main" id="mainContent">
+      ${renderStep1()}
+    </div>
+  `;
+}
+
+// ─── STEP 1: Serviços ───────────────────────────────
+function renderStep1() {
+  return `
+    <div class="card" id="cardStep1">
+      <div class="card-title">✂️ Escolha o serviço</div>
+      <div class="servicos-grid">
+        ${servicos.length ? servicos.map(s => `
+          <div class="servico-card ${sel.servico === s.id ? 'selected':''}" onclick="selecionarServico('${s.id}')">
+            <div class="servico-check">${sel.servico === s.id ? '✓':''}</div>
+            <div class="servico-nome">${s.nome}</div>
+            <div class="servico-meta">
+              <span class="servico-preco">${moeda(s.preco)}</span>
+              <span class="servico-duracao">${s.duracao}min</span>
+            </div>
+          </div>`).join('')
+        : '<div class="horarios-empty">Nenhum serviço disponível.</div>'}
+      </div>
+      <div class="actions" style="margin-top:18px">
+        <span></span>
+        <button class="btn btn-primary" onclick="irStep(2)" ${sel.servico?'':'disabled'}>
+          Continuar →
+        </button>
+      </div>
+    </div>`;
+}
+
+// ─── STEP 2: Profissional ───────────────────────────
+function renderStep2() {
+  return `
+    <div class="card" id="cardStep2">
+      <div class="card-title">👤 Escolha o profissional</div>
+      <div class="prof-list">
+        <div class="prof-option ${sel.profissional === 'qualquer' ? 'selected':''}" onclick="selecionarProf('qualquer')">
+          <div class="prof-av" style="background:linear-gradient(135deg,#A78BFA,#EC4899)">🎲</div>
+          <div>
+            <div class="prof-name">Sem preferência</div>
+            <div class="prof-spec">Primeiro disponível</div>
+          </div>
+          <div class="prof-check">✅</div>
+        </div>
+        ${profissionais.map(p => `
+          <div class="prof-option ${sel.profissional === p.id ? 'selected':''}" onclick="selecionarProf('${p.id}')">
+            <div class="prof-av" style="background:${p.cor||'#7C3AED'}">${p.nome[0]}</div>
+            <div>
+              <div class="prof-name">${p.nome}</div>
+              <div class="prof-spec">${p.especialidade||''}</div>
+            </div>
+            <div class="prof-check">✅</div>
+          </div>`).join('')}
+      </div>
+      <div class="actions" style="margin-top:18px">
+        <button class="btn btn-secondary" onclick="irStep(1)">← Voltar</button>
+        <button class="btn btn-primary" onclick="irStep(3)" ${sel.profissional?'':'disabled'}>
+          Continuar →
+        </button>
+      </div>
+    </div>`;
+}
+
+// ─── STEP 3: Data e Hora ────────────────────────────
+async function renderStep3() {
+  // Carregar agendamentos do mês para marcar ocupados
+  await carregarAgendamentosMes(calAno, calMes);
+
+  return `
+    <div class="card" id="cardStep3">
+      <div class="card-title">📅 Escolha a data e horário</div>
+      <div class="cal-nav">
+        <button class="cal-btn" onclick="calNavegar(-1)">‹ Anterior</button>
+        <span class="cal-month" id="calMesAno">${MESES[calMes]} ${calAno}</span>
+        <button class="cal-btn" onclick="calNavegar(1)">Próximo ›</button>
+      </div>
+      <div class="cal-grid" id="calGrid">
+        ${DIAS_SEMANA.map(d=>`<div class="cal-day-name">${d}</div>`).join('')}
+      </div>
+      <div id="horariosWrap">
+        <div class="horarios-empty" style="margin-top:16px">← Selecione um dia no calendário</div>
+      </div>
+      <div class="actions" style="margin-top:18px">
+        <button class="btn btn-secondary" onclick="irStep(2)">← Voltar</button>
+        <button class="btn btn-primary" id="btnContinuarStep3" onclick="irStep(4)" disabled>
+          Continuar →
+        </button>
+      </div>
+    </div>`;
+}
+
+// ─── STEP 4: Dados + Confirmar ──────────────────────
+function renderStep4() {
+  const srv = servicos.find(s=>s.id===sel.servico) || {};
+  const prf = sel.profissional !== 'qualquer'
+    ? (profissionais.find(p=>p.id===sel.profissional)||{nome:'Qualquer'})
+    : {nome:'Primeiro disponível'};
+
+  return `
+    <div class="card">
+      <div class="card-title">📋 Seus dados</div>
+      <div class="form-grid">
+        <div class="field span-2">
+          <label>Nome completo *</label>
+          <input type="text" id="cliNome" placeholder="Seu nome" autocomplete="name">
+        </div>
+        <div class="field">
+          <label>WhatsApp *</label>
+          <input type="tel" id="cliTel" placeholder="(11) 99999-9999" autocomplete="tel"
+            oninput="formatarTel(this)">
+        </div>
+        <div class="field">
+          <label>E-mail</label>
+          <input type="email" id="cliEmail" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="field span-2">
+          <label>Observações</label>
+          <textarea id="cliObs" placeholder="Ex: Quero coloração mechas loiro..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="resumo-box">
+      <div style="font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:12px">Resumo do agendamento</div>
+      <div class="resumo-row"><span class="label">Serviço</span><span class="valor">${srv.nome||'—'}</span></div>
+      <div class="resumo-row"><span class="label">Profissional</span><span class="valor">${prf.nome}</span></div>
+      <div class="resumo-row"><span class="label">Data</span><span class="valor">${fmtData(sel.data)}</span></div>
+      <div class="resumo-row"><span class="label">Horário</span><span class="valor">${sel.hora||'—'}</span></div>
+      <div class="resumo-row"><span class="label">Duração</span><span class="valor">${srv.duracao||'—'}min</span></div>
+      <div class="resumo-row" style="padding-top:12px;margin-top:4px;border-top:1.5px solid rgba(124,58,237,.15)">
+        <span class="label" style="font-weight:800;color:var(--text)">Total</span>
+        <span class="valor resumo-total">${moeda(srv.preco)}</span>
+      </div>
+    </div>
+
+    <div id="confirmError"></div>
+
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="irStep(3)">← Voltar</button>
+      <button class="btn btn-primary" id="btnConfirmar" onclick="confirmarAgendamento()">
+        ✅ Confirmar agendamento
+      </button>
+    </div>`;
+}
+
+// ─── SUCESSO ──────────────────────────────
+function renderSucesso(ag) {
+  const srv = servicos.find(s=>s.id===sel.servico)||{};
+  const prf = sel.profissional !== 'qualquer'
+    ? (profissionais.find(p=>p.id===sel.profissional)||{nome:'Qualquer'})
+    : {nome:'Primeiro disponível'};
+
+  const msgWa = encodeURIComponent(
+    `Olá ${negocio.name}! ✅ Agendei um *${srv.nome}* para *${fmtData(sel.data)}* às *${sel.hora}*. Meu nome: ${ag.cliente}. Aguardo confirmação!`
+  );
+  const telNeg = (config.tel||'').replace(/\D/g,'');
+  const waLink = telNeg ? `https://wa.me/55${telNeg}?text=${msgWa}` : null;
+
+  return `
+    <div class="success-screen show">
+      <div class="success-icon">✅</div>
+      <h2>Agendamento realizado!</h2>
+      <p>Em breve você receberá a confirmação. Obrigado por escolher <strong>${negocio.name}</strong>!</p>
+      <div class="success-detail">
+        <div class="row"><span class="l">Serviço</span><span class="r">${srv.nome||'—'}</span></div>
+        <div class="row"><span class="l">Profissional</span><span class="r">${prf.nome}</span></div>
+        <div class="row"><span class="l">Data</span><span class="r">${fmtData(sel.data)}</span></div>
+        <div class="row"><span class="l">Horário</span><span class="r">${sel.hora}</span></div>
+        <div class="row"><span class="l">Valor</span><span class="r">${moeda(srv.preco)}</span></div>
+      </div>
+      ${waLink ? `<a href="${waLink}" target="_blank" class="whatsapp-btn">💬 Confirmar pelo WhatsApp</a>` : ''}
+      <button class="btn btn-secondary" style="margin-top:14px" onclick="novoAgendamento()">+ Fazer outro agendamento</button>
+    </div>`;
+}
+
+// ─── NOT FOUND / ERROR ─────────────────────
+function renderNotFound(msg='') {
+  document.getElementById('root').innerHTML = `
+    <div class="main">
+      <div class="not-found">
+        <div class="emoji">🔍</div>
+        <h2>Estabelecimento não encontrado</h2>
+        <p>${msg || 'Verifique o link e tente novamente.'}</p>
+      </div>
+    </div>`;
+}
+function renderError(msg='') {
+  document.getElementById('root').innerHTML = `
+    <div class="main"><div class="error-box">⚠️ ${msg}</div></div>`;
+}
+
+// ═══════════════════════════════════════════
+//  NAVEGAÇÃO ENTRE STEPS
+// ═══════════════════════════════════════════
+async function irStep(n) {
+  // Validações antes de avançar
+  if (n===2 && !sel.servico) return;
+  if (n===3 && !sel.profissional) return;
+  if (n===4 && (!sel.data||!sel.hora)) return;
+
+  atualizarStepper(n);
+  const mc = document.getElementById('mainContent');
+
+  if (n===1) mc.innerHTML = renderStep1();
+  if (n===2) mc.innerHTML = renderStep2();
+  if (n===3) { mc.innerHTML = '<div class="loading"><div class="spinner"></div><span>Verificando disponibilidade...</span></div>'; const html = await renderStep3(); mc.innerHTML = html; renderCal(); }
+  if (n===4) mc.innerHTML = await renderStep4();
+
+  mc.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function atualizarStepper(atual) {
+  for (let i=1;i<=4;i++) {
+    const el = document.getElementById('step'+i);
+    if (!el) continue;
+    el.classList.remove('active','done');
+    if (i < atual) el.classList.add('done');
+    if (i === atual) el.classList.add('active');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  SELEÇÕES
+// ═══════════════════════════════════════════
+function selecionarServico(id) {
+  sel.servico = id;
+  // Re-render os cards
+  document.querySelectorAll('.servico-card').forEach(c => {
+    const isSelected = c.getAttribute('onclick').includes(`'${id}'`);
+    c.classList.toggle('selected', isSelected);
+    const chk = c.querySelector('.servico-check');
+    if (chk) chk.textContent = isSelected ? '✓' : '';
+  });
+  const btn = document.querySelector('#cardStep1 .btn-primary');
+  if (btn) btn.disabled = false;
+}
+
+function selecionarProf(id) {
+  sel.profissional = id;
+  document.querySelectorAll('.prof-option').forEach(c => {
+    const selected = c.getAttribute('onclick').includes(`'${id}'`);
+    c.classList.toggle('selected', selected);
+  });
+  const btn = document.querySelector('#cardStep2 .btn-primary');
+  if (btn) btn.disabled = false;
+}
+
+function selecionarHora(hora, btn) {
+  if (btn.classList.contains('ocupado')) return;
+  sel.hora = hora;
+  document.querySelectorAll('.horario-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const continuar = document.getElementById('btnContinuarStep3');
+  if (continuar) continuar.disabled = false;
+}
+
+// ═══════════════════════════════════════════
+//  CALENDÁRIO
+// ═══════════════════════════════════════════
+async function calNavegar(dir) {
+  calMes += dir;
+  if (calMes>11){calMes=0;calAno++;}
+  if (calMes<0){calMes=11;calAno--;}
+  sel.data = null; sel.hora = null;
+  const span = document.getElementById('calMesAno');
+  if (span) span.textContent = `${MESES[calMes]} ${calAno}`;
+  await carregarAgendamentosMes(calAno, calMes);
+  renderCal();
+  const wrap = document.getElementById('horariosWrap');
+  if (wrap) wrap.innerHTML = '<div class="horarios-empty" style="margin-top:16px">← Selecione um dia no calendário</div>';
+  const btn = document.getElementById('btnContinuarStep3');
+  if (btn) btn.disabled = true;
+}
+
+async function carregarAgendamentosMes(ano, mes) {
+  const inicio = `${ano}-${String(mes+1).padStart(2,'0')}-01`;
+  const fim    = `${ano}-${String(mes+1).padStart(2,'0')}-31`;
+  const { data } = await _sb.from('agendamentos')
+    .select('data,hora,profissional,status')
+    .eq('company_id', negocio.id)
+    .gte('data', inicio)
+    .lte('data', fim)
+    .in('status', ['pendente','confirmado']);
+  agendamentos = data || [];
+}
+
+function renderCal() {
+  const grid = document.getElementById('calGrid');
+  if (!grid) return;
+
+  // Manter cabeçalhos
+  while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+
+  const hoje_str    = hoje();
+  const primeiroDia = new Date(calAno, calMes, 1).getDay();
+  const diasNoMes   = new Date(calAno, calMes+1, 0).getDate();
+  const diasMesAnt  = new Date(calAno, calMes, 0).getDate();
+
+  // Dias mês anterior (desabilitados)
+  for (let i=primeiroDia-1;i>=0;i--) {
+    const d = document.createElement('div');
+    d.className='cal-day other-month disabled';
+    d.textContent=diasMesAnt-i;
+    grid.appendChild(d);
+  }
+
+  for (let d=1;d<=diasNoMes;d++) {
+    const dateStr = `${calAno}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isPast  = dateStr < hoje_str;
+    const isSel   = dateStr === sel.data;
+    const isHoje  = dateStr === hoje_str;
+    const hasSlots= agendamentos.some(a=>a.data===dateStr);
+
+    const div = document.createElement('div');
+    div.className = 'cal-day'
+      + (isPast ? ' disabled' : '')
+      + (isHoje ? ' today' : '')
+      + (isSel  ? ' selected' : '')
+      + (hasSlots && !isPast ? ' has-slots' : '');
+    div.textContent = d;
+
+    if (!isPast) div.onclick = () => selecionarData(dateStr);
+    grid.appendChild(div);
+  }
+
+  // Completar
+  const total = primeiroDia + diasNoMes;
+  const resto = total%7===0 ? 0 : 7-(total%7);
+  for (let d=1;d<=resto;d++){
+    const div=document.createElement('div');
+    div.className='cal-day other-month disabled';
+    div.textContent=d;
+    grid.appendChild(div);
+  }
+}
+
+function selecionarData(dateStr) {
+  sel.data = dateStr; sel.hora = null;
+  renderCal();
+  renderHorarios(dateStr);
+}
+
+function renderHorarios(dateStr) {
+  const wrap = document.getElementById('horariosWrap');
+  if (!wrap) return;
+
+  const srv  = servicos.find(s=>s.id===sel.servico);
+  const dur  = (srv && srv.duracao) || 60;
+
+  // Determinar horários de funcionamento
+  const DIAS = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+  const diaSemana = new Date(dateStr+'T00:00:00').getDay();
+  const nomeDia = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][diaSemana];
+
+  let abertura = '09:00', fechamento = '19:00';
+  if (config.horarios && config.horarios[nomeDia]) {
+    const h = config.horarios[nomeDia];
+    if (!h.ativo) { wrap.innerHTML = '<div class="horarios-empty" style="margin-top:16px">Fechado neste dia.</div>'; return; }
+    abertura  = h.abertura  || '09:00';
+    fechamento= h.fechamento|| '19:00';
+  }
+
+  // Gerar slots de 30min
+  const slots = [];
+  let cur = horaParaMin(abertura);
+  const fim = horaParaMin(fechamento);
+  const intervalo = config.intervalo || 30;
+
+  while (cur + dur <= fim) {
+    slots.push(minParaHora(cur));
+    cur += intervalo;
+  }
+
+  // Checar ocupados para o profissional selecionado
+  const agDia = agendamentos.filter(a => {
+    if (a.data !== dateStr) return false;
+    if (sel.profissional !== 'qualquer' && a.profissional !== sel.profissional) return false;
+    return true;
+  });
+  const ocupados = new Set(agDia.map(a => a.hora.slice(0,5)));
+
+  wrap.innerHTML = `
+    <div style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:16px;margin-bottom:2px">
+      Horários disponíveis — ${new Date(dateStr+'T00:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'short'})}
+    </div>
+    <div class="horarios-grid">
+      ${slots.map(h => `
+        <button class="horario-btn ${ocupados.has(h)?'ocupado':''} ${sel.hora===h?'selected':''}"
+          onclick="selecionarHora('${h}', this)">
+          ${h}
+        </button>`).join('')}
+    </div>`;
+
+  if (!slots.length) {
+    wrap.innerHTML = '<div class="horarios-empty" style="margin-top:16px">Nenhum horário disponível para este dia.</div>';
+  }
+
+  const btn = document.getElementById('btnContinuarStep3');
+  if (btn) btn.disabled = !sel.hora;
+}
+
+function horaParaMin(h) {
+  const [hh,mm]=(h||'09:00').split(':'); return parseInt(hh)*60+parseInt(mm||0);
+}
+function minParaHora(m) {
+  return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+}
+
+// ═══════════════════════════════════════════
+//  CONFIRMAR AGENDAMENTO
+// ═══════════════════════════════════════════
+async function confirmarAgendamento() {
+  const nome  = (document.getElementById('cliNome') &&document.getElementById('cliNome').value.trim()) || '';
+  const tel   = (document.getElementById('cliTel')  &&document.getElementById('cliTel').value.trim())  || '';
+  const email = (document.getElementById('cliEmail')&&document.getElementById('cliEmail').value.trim())|| '';
+  const obs   = (document.getElementById('cliObs')  &&document.getElementById('cliObs').value.trim())  || '';
+
+  const errEl = document.getElementById('confirmError');
+
+  if (!nome || !tel) {
+    if (errEl) errEl.innerHTML = '<div class="error-box">⚠️ Preencha nome e WhatsApp para continuar.</div>';
+    return;
+  }
+  if (errEl) errEl.innerHTML = '';
+
+  const btn = document.getElementById('btnConfirmar');
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Salvando...'; }
+
+  const srv = servicos.find(s=>s.id===sel.servico)||{};
+  let profId = sel.profissional === 'qualquer' ? null : sel.profissional;
+  let profNome = 'Não definido';
+  if (profId) {
+    const prf = profissionais.find(p=>p.id===profId);
+    profNome = prf ? prf.nome : '';
+  } else {
+    // Pegar primeiro disponível
+    const livre = profissionais.find(p => {
+      return !agendamentos.some(a => a.data===sel.data && a.hora===sel.hora && a.profissional===p.id);
+    });
+    if (livre) { profId=livre.id; profNome=livre.nome; }
+  }
+
+  const agend = {
+    id:           uid(),
+    company_id:   negocio.id,
+    data:         sel.data,
+    hora:         sel.hora,
+    cliente:      nome,
+    telefone:     tel,
+    servico:      sel.servico,
+    servico_nome: srv.nome||'',
+    profissional: profId,
+    prof_nome:    profNome,
+    valor:        srv.preco||0,
+    forma:        'a_definir',
+    status:       'pendente',
+    obs:          obs,
+  };
+
+  try {
+    const { error } = await _sb.from('agendamentos').insert(agend);
+    if (error) throw error;
+
+    // Tentar criar/atualizar cliente
+    try {
+      const { data: cliExist } = await _sb.from('clientes')
+        .select('id').eq('company_id', negocio.id).eq('telefone', tel).single();
+      if (!cliExist) {
+        await _sb.from('clientes').insert({
+          id: uid(), company_id: negocio.id,
+          nome, telefone: tel, email, origem: 'link_agendamento',
+        });
+      }
+    } catch(_) { /* não crítico */ }
+
+    // Renderizar sucesso
+    document.getElementById('mainContent').innerHTML = renderSucesso(agend);
+    document.getElementById('stepper') && (document.getElementById('stepper').style.display='none');
+    window.scrollTo({top:0, behavior:'smooth'});
+
+  } catch(e) {
+    if (btn) { btn.disabled=false; btn.textContent='✅ Confirmar agendamento'; }
+    if (errEl) errEl.innerHTML = `<div class="error-box">❌ Erro ao salvar: ${e.message}. Tente novamente.</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+function formatarTel(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,11);
+  if (v.length>10) v = v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
+  else if (v.length>6) v = v.replace(/(\d{2})(\d{4})(\d+)/,'($1) $2-$3');
+  else if (v.length>2) v = v.replace(/(\d{2})(\d+)/,'($1) $2');
+  input.value = v;
+}
+
+function novoAgendamento() {
+  sel = { servico:null, profissional:null, data:null, hora:null };
+  calAno = new Date().getFullYear();
+  calMes = new Date().getMonth();
+  renderApp();
+}
+
+// ═══════════════════════════════════════════
+//  START
+// ═══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>

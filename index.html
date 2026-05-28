@@ -1494,8 +1494,8 @@ textarea { resize: vertical; min-height: 72px; }
 /* ═══════════════════════════════════════════
    SUPABASE CONFIG
 ═══════════════════════════════════════════ */
-const SUPABASE_URL = 'COLE_SUPABASE_URL_AQUI';
-const SUPABASE_KEY = 'COLE_SUPABASE_ANON_KEY_AQUI';
+const SUPABASE_URL = 'https://awdgnxwmzestfdfuabcb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3ZGdueHdtemVzdGZkZnVhYmNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NjIxMDQsImV4cCI6MjA5NDUzODEwNH0.NeFqVTqf7gSkfneH2GOJoYTVWi808vKM73Rvau6Z4ds';
 const _sb = (SUPABASE_KEY && !SUPABASE_KEY.startsWith('COLE_'))
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
   : null;
@@ -2425,13 +2425,31 @@ function perfilRender() {
 function atualizarPreview() {
   const nome = ($('ppNome') && $('ppNome').value) || (currentNegocio && currentNegocio.name) || 'Seu negócio';
   $('ppNomePreview').textContent = nome;
-  $('ppDescPreview').textContent = ($('ppDesc') && $('ppDesc').value) || 'Descrição do estabelecimento';
+  $('ppDescPreview').textContent = ($('ppDesc') && $('ppDesc').value) || 'Descricao do estabelecimento';
   $('ppAvPreview').textContent   = nome[0].toUpperCase();
-  const slug = nome.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-  $('ppLink').textContent = `agendapro.com.br/agendar/${slug}`;
+
+  // Slug normalizado igual ao da booking page
+  const negSlug = nome.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+
+  // URL real apontando para booking.html
+  const bookingUrl = location.origin + '/booking.html?slug=' + negSlug;
+  $('ppLink').textContent = bookingUrl;
+
+  // Link "Abrir" ao lado
+  if (!$('btnAbrirBooking')) {
+    const a = document.createElement('a');
+    a.id = 'btnAbrirBooking'; a.target = '_blank';
+    a.style.cssText = 'font-size:.68rem;font-weight:700;color:var(--accent);margin-left:8px;cursor:pointer;text-decoration:none;white-space:nowrap';
+    a.textContent = '\u2197 Abrir';
+    $('ppLink').insertAdjacentElement('afterend', a);
+  }
+  const ab = $('btnAbrirBooking');
+  if (ab) ab.href = bookingUrl;
 
   $('ppServicosPreview').innerHTML = servicos.slice(0,4).map(s=>
-    `<span class="servico-chip">${s.nome}</span>`
+    '<span class="servico-chip">'+s.nome+'</span>'
   ).join('');
 }
 
@@ -2448,7 +2466,17 @@ function salvarPerfil() {
   localStorage.setItem(getKey('config'), JSON.stringify(configNegocio));
   $('sidebarBiz').textContent = configNegocio.nome || currentNegocio.name;
   atualizarPreview();
-  toast('✅ Perfil salvo!');
+
+  // Persistir no Supabase para a booking page ler
+  if (_sb && currentNegocio && currentNegocio.id !== 'demo_neg') {
+    const cid = currentNegocio.id;
+    _sb.from('configs_negocio')
+      .upsert({ id: cid, company_id: cid, config: configNegocio, updated_at: new Date().toISOString() },
+               { onConflict: 'company_id' })
+      .then(({ error }) => { if (error) console.warn('Supabase config save:', error.message); });
+  }
+
+  toast('\u2705 Perfil salvo!');
 }
 
 function copiarLink() {

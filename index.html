@@ -1494,8 +1494,8 @@ textarea { resize: vertical; min-height: 72px; }
 /* ═══════════════════════════════════════════
    SUPABASE CONFIG
 ═══════════════════════════════════════════ */
-const SUPABASE_URL = 'https://awdgnxwmzestfdfuabcb.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3ZGdueHdtemVzdGZkZnVhYmNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NjIxMDQsImV4cCI6MjA5NDUzODEwNH0.NeFqVTqf7gSkfneH2GOJoYTVWi808vKM73Rvau6Z4ds';
+const SUPABASE_URL = 'https://rvphboypifrxgtoltsez.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ2cGhib3lwaWZyeGd0b2x0c2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NzcyMTIsImV4cCI6MjA5NTU1MzIxMn0.EK_L_3ubRkktN6kN_7qtgk-7QsNyqMRvIsU7jdysf-g';
 const _sb = (SUPABASE_KEY && !SUPABASE_KEY.startsWith('COLE_'))
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
   : null;
@@ -2024,6 +2024,7 @@ function salvarAgendamento() {
   }
 
   salvar('agendamentos', agendamentos);
+  sbUpsert('agendamentos', obj);
   fecharModal('modalAgend');
   toast('✅ Agendamento salvo!');
   agendRender();
@@ -2036,6 +2037,7 @@ function excluirAgendamento(id) {
   if (!confirm('Excluir este agendamento?')) return;
   agendamentos = agendamentos.filter(a => a.id !== id);
   salvar('agendamentos', agendamentos);
+  sbDelete('agendamentos', id);
   agendRender();
   dashAtualizar();
   calRender();
@@ -2120,6 +2122,7 @@ function salvarCliente() {
   if (editId) { const i = clientes.findIndex(c=>c.id===editId); if(i>=0) clientes[i]=obj; }
   else clientes.push(obj);
   salvar('clientes', clientes);
+  sbUpsert('clientes', obj);
   fecharModal('modalCliente');
   toast('✅ Cliente salvo!');
   clienteRender();
@@ -2129,6 +2132,7 @@ function excluirCliente(id) {
   if (!confirm('Excluir este cliente?')) return;
   clientes = clientes.filter(c => c.id !== id);
   salvar('clientes', clientes);
+  sbDelete('clientes', id);
   clienteRender();
   toast('🗑 Cliente excluído');
 }
@@ -2193,10 +2197,12 @@ function salvarServico() {
     preco: parseFloat($('servicoPreco').value)||0,
     comissao: parseInt($('servicoComissao').value)||40,
     descricao: $('servicoDesc').value.trim(),
+    ativo: true,
   };
   if (editId) { const i=servicos.findIndex(s=>s.id===editId); if(i>=0) servicos[i]=obj; }
   else servicos.push(obj);
   salvar('servicos', servicos);
+  sbUpsert('servicos', obj);
   fecharModal('modalServico');
   toast('✅ Serviço salvo!');
   servicoRender();
@@ -2207,6 +2213,7 @@ function excluirServico(id) {
   if (!confirm('Excluir este serviço?')) return;
   servicos = servicos.filter(s=>s.id!==id);
   salvar('servicos', servicos);
+  sbDelete('servicos', id);
   servicoRender();
   toast('🗑 Serviço excluído');
 }
@@ -2277,10 +2284,12 @@ function salvarProfissional() {
     email: $('profEmail').value.trim(),
     comissao: parseInt($('profComissao').value)||40,
     cor: $('profCor').value,
+    ativo: true,
   };
   if (editId) { const i=profissionais.findIndex(p=>p.id===editId); if(i>=0) profissionais[i]=obj; }
   else profissionais.push(obj);
   salvar('profissionais', profissionais);
+  sbUpsert('profissionais', obj);
   fecharModal('modalProf');
   toast('✅ Profissional salvo!');
   profRender();
@@ -2291,6 +2300,7 @@ function excluirProfissional(id) {
   if (!confirm('Excluir este profissional?')) return;
   profissionais = profissionais.filter(p=>p.id!==id);
   salvar('profissionais', profissionais);
+  sbDelete('profissionais', id);
   profRender();
   toast('🗑 Profissional excluído');
 }
@@ -2558,6 +2568,25 @@ function popularSelects() {
     finMes.innerHTML = '<option value="">Todos os períodos</option>' +
       meses.map(m=>`<option value="${m}">${m}</option>`).join('');
   }
+}
+
+
+/* ═══════════════════════════════════════════
+   SUPABASE UPSERT HELPERS
+═══════════════════════════════════════════ */
+async function sbUpsert(tabela, obj) {
+  if (!_sb || !currentNegocio || currentNegocio.id === 'demo_neg') return;
+  try {
+    const { error } = await _sb.from(tabela).upsert(obj);
+    if (error) console.warn('[AgendaPro] upsert ' + tabela + ':', error.message);
+  } catch(e) { console.warn('[AgendaPro] upsert erro:', e.message); }
+}
+async function sbDelete(tabela, id) {
+  if (!_sb || !currentNegocio || currentNegocio.id === 'demo_neg') return;
+  try {
+    const { error } = await _sb.from(tabela).delete().eq('id', id);
+    if (error) console.warn('[AgendaPro] delete ' + tabela + ':', error.message);
+  } catch(e) { console.warn('[AgendaPro] delete erro:', e.message); }
 }
 
 /* ═══════════════════════════════════════════

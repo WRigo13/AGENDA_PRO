@@ -1,0 +1,2574 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#7C3AED">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AgendaPro">
+<title>AgendaPro — Sistema de Agendamentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ═══════════════════════════════════════════
+   TOKENS DE DESIGN
+═══════════════════════════════════════════ */
+:root {
+  --accent:        #7C3AED;
+  --accent-hover:  #6D28D9;
+  --accent-light:  #EDE9FE;
+  --accent-mid:    #A78BFA;
+  --accent-soft:   #F5F3FF;
+  --pink:          #EC4899;
+  --pink-light:    #FCE7F3;
+  --teal:          #0D9488;
+  --teal-light:    #CCFBF1;
+
+  --bg:            #F8F7FF;
+  --surface:       #FFFFFF;
+  --surface2:      #F3F2FB;
+  --surface3:      #EAE8F7;
+  --border:        #DDD9F5;
+  --border-strong: #BDB5F0;
+
+  --text:          #1A1235;
+  --text-muted:    #6B5E9A;
+  --text-light:    #9D8DC4;
+
+  --danger:        #DC2626;
+  --danger-bg:     #FEF2F2;
+  --success:       #059669;
+  --success-bg:    #ECFDF5;
+  --warning:       #D97706;
+  --warning-bg:    #FFFBEB;
+
+  --sidebar-w:     240px;
+  --header-h:      56px;
+  --radius:        12px;
+  --radius-lg:     18px;
+
+  --shadow-sm:     0 1px 3px rgba(124,58,237,.08), 0 1px 2px rgba(124,58,237,.04);
+  --shadow-md:     0 4px 16px rgba(124,58,237,.10), 0 2px 6px rgba(124,58,237,.06);
+  --shadow-lg:     0 12px 40px rgba(124,58,237,.15), 0 4px 12px rgba(124,58,237,.08);
+
+  --mono: 'DM Mono', monospace;
+  --font: 'Plus Jakarta Sans', sans-serif;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { height:100%; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  height: 100%;
+  overflow: hidden;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════
+   LAYOUT PRINCIPAL
+═══════════════════════════════════════════ */
+#appLogin { display:flex; height:100vh; }
+#appShell { display:none; height:100vh; overflow:hidden; }
+.sidebar {
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: linear-gradient(180deg, #3B0764 0%, #4C1D95 40%, #5B21B6 100%);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: rgba(167,139,250,.12);
+  pointer-events: none;
+}
+.sidebar::after {
+  content: '';
+  position: absolute;
+  bottom: 80px; left: -40px;
+  width: 150px; height: 150px;
+  border-radius: 50%;
+  background: rgba(236,72,153,.08);
+  pointer-events: none;
+}
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.top-bar {
+  height: var(--header-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 12px;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+.page-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ═══════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════ */
+.brand {
+  padding: 20px 16px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  margin-bottom: 8px;
+}
+.brand-logo {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #A78BFA, #EC4899);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 12px rgba(167,139,250,.4);
+}
+.brand-text h1 {
+  font-size: .95rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -.01em;
+}
+.brand-text p {
+  font-size: .65rem;
+  color: rgba(255,255,255,.45);
+  margin-top: 1px;
+}
+.sidebar-biz {
+  margin: 0 10px 8px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.sidebar-biz .biz-label {
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,.4);
+}
+.sidebar-biz .biz-name {
+  font-size: .82rem;
+  font-weight: 700;
+  color: white;
+  margin-top: 2px;
+}
+.nav-group { padding: 0 8px; margin-bottom: 4px; }
+.nav-label {
+  font-size: .58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: rgba(255,255,255,.3);
+  padding: 8px 10px 4px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all .15s;
+  font-size: .82rem;
+  font-weight: 500;
+  color: rgba(255,255,255,.6);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 1px;
+}
+.nav-item:hover { background: rgba(255,255,255,.08); color: rgba(255,255,255,.9); }
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(167,139,250,.25), rgba(236,72,153,.15));
+  color: white;
+  box-shadow: inset 0 0 0 1px rgba(167,139,250,.3);
+}
+.nav-item .nav-ico { font-size: .95rem; width: 18px; text-align: center; }
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.06);
+}
+.user-av {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #A78BFA, #EC4899);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem; font-weight: 800; color: white;
+  flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: .75rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: .62rem; color: rgba(255,255,255,.4); }
+.btn-sair {
+  background: none; border: none; cursor: pointer;
+  color: rgba(255,255,255,.4); font-size: .8rem; padding: 2px;
+  transition: color .15s;
+}
+.btn-sair:hover { color: rgba(255,255,255,.8); }
+
+/* ═══════════════════════════════════════════
+   TOP BAR
+═══════════════════════════════════════════ */
+.top-bar-left { flex: 1; }
+.page-title { font-size: 1rem; font-weight: 800; color: var(--text); }
+.page-subtitle { font-size: .72rem; color: var(--text-muted); margin-top: 1px; }
+.top-bar-actions { display: flex; gap: 8px; align-items: center; }
+.hamburger {
+  display: none;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); font-size: 1.2rem; padding: 4px;
+}
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px;
+  border-radius: 9px;
+  font-family: var(--font);
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+  border: 1px solid transparent;
+  line-height: 1;
+}
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px rgba(124,58,237,.3);
+}
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(124,58,237,.4); }
+.btn-secondary { background: var(--surface2); color: var(--text-muted); border-color: var(--border); }
+.btn-secondary:hover { background: var(--surface3); color: var(--text); }
+.btn-danger { background: var(--danger-bg); color: var(--danger); border-color: #FECACA; }
+.btn-danger:hover { background: var(--danger); color: white; }
+.btn-ghost { background: none; color: var(--text-muted); border-color: transparent; }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.btn-sm { padding: 5px 11px; font-size: .74rem; }
+.btn-icon { padding: 7px; border-radius: 8px; }
+.btn-pink { background: var(--pink); color: white; box-shadow: 0 2px 8px rgba(236,72,153,.3); }
+.btn-pink:hover { background: #DB2777; transform: translateY(-1px); }
+
+/* ═══════════════════════════════════════════
+   CARDS & SURFACES
+═══════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-title { font-size: .85rem; font-weight: 800; color: var(--text); }
+.card-sub   { font-size: .72rem; color: var(--text-muted); margin-top: 2px; }
+
+/* KPI cards */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 14px; }
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform .15s, box-shadow .15s;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: -20px; right: -20px;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  opacity: .08;
+}
+.kpi-card.purple::before { background: var(--accent); }
+.kpi-card.pink::before   { background: var(--pink); }
+.kpi-card.teal::before   { background: var(--teal); }
+.kpi-card.amber::before  { background: #F59E0B; }
+.kpi-ico {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+.kpi-card.purple .kpi-ico { background: var(--accent-light); }
+.kpi-card.pink   .kpi-ico { background: var(--pink-light); }
+.kpi-card.teal   .kpi-ico { background: var(--teal-light); }
+.kpi-card.amber  .kpi-ico { background: #FEF3C7; }
+.kpi-val  { font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
+.kpi-label{ font-size: .72rem; color: var(--text-muted); margin-top: 4px; }
+
+/* ═══════════════════════════════════════════
+   AGENDA / CALENDARIO
+═══════════════════════════════════════════ */
+.agenda-layout { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
+.calendar-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.cal-month { font-size: .92rem; font-weight: 800; color: var(--text); }
+.cal-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 10px; cursor: pointer;
+  font-size: .8rem; transition: all .15s; font-family: var(--font);
+  color: var(--text-muted);
+}
+.cal-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent-mid); }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+.cal-day-name {
+  text-align: center; font-size: .65rem; font-weight: 700;
+  text-transform: uppercase; color: var(--text-light); padding: 4px 0;
+}
+.cal-day {
+  aspect-ratio: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 8px; cursor: pointer; transition: all .15s;
+  font-size: .78rem; font-weight: 500; color: var(--text-muted);
+  position: relative; gap: 2px;
+}
+.cal-day:hover { background: var(--accent-light); color: var(--accent); }
+.cal-day.today { background: var(--accent); color: white; font-weight: 800; box-shadow: 0 2px 8px rgba(124,58,237,.35); }
+.cal-day.selected { background: var(--accent-light); color: var(--accent); border: 2px solid var(--accent-mid); }
+.cal-day.other-month { color: var(--text-light); opacity: .5; }
+.cal-dot {
+  width: 4px; height: 4px; border-radius: 50%; background: var(--pink);
+}
+.cal-day.today .cal-dot { background: rgba(255,255,255,.8); }
+
+/* Agenda do dia */
+.agenda-slots { display: flex; flex-direction: column; gap: 2px; max-height: 500px; overflow-y: auto; }
+.slot-item {
+  display: flex; align-items: stretch; gap: 0;
+  border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: all .15s;
+  cursor: pointer;
+}
+.slot-item:hover { box-shadow: var(--shadow-md); transform: translateX(2px); }
+.slot-color {
+  width: 4px;
+  flex-shrink: 0;
+}
+.slot-info { padding: 10px 12px; flex: 1; }
+.slot-time { font-size: .7rem; font-weight: 700; color: var(--text-muted); font-family: var(--mono); }
+.slot-client { font-size: .82rem; font-weight: 700; color: var(--text); }
+.slot-service { font-size: .72rem; color: var(--text-muted); }
+.slot-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 999px;
+  font-size: .62rem; font-weight: 700; margin-left: auto; align-self: center; margin-right: 10px;
+}
+.badge-confirmado { background: var(--success-bg); color: var(--success); }
+.badge-pendente   { background: var(--warning-bg); color: var(--warning); }
+.badge-cancelado  { background: var(--danger-bg);  color: var(--danger); }
+.badge-concluido  { background: var(--accent-light); color: var(--accent); }
+
+/* ═══════════════════════════════════════════
+   TABELAS
+═══════════════════════════════════════════ */
+.table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+thead th {
+  background: var(--surface2);
+  padding: 10px 14px;
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--accent-soft); }
+.empty-state {
+  text-align: center; padding: 40px; color: var(--text-light);
+}
+.empty-ico { font-size: 2rem; display: block; margin-bottom: 8px; }
+
+/* ═══════════════════════════════════════════
+   FORMULÁRIOS
+═══════════════════════════════════════════ */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field.span-2 { grid-column: span 2; }
+.field.span-3 { grid-column: span 3; }
+label { font-size: .72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+input, select, textarea {
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  font-family: var(--font);
+  font-size: .84rem;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent-mid);
+  box-shadow: 0 0 0 3px rgba(124,58,237,.1);
+}
+textarea { resize: vertical; min-height: 72px; }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+
+/* ═══════════════════════════════════════════
+   MODAIS
+═══════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,18,53,.5);
+  backdrop-filter: blur(4px);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 28px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+.modal h3 { font-size: 1rem; font-weight: 800; margin-bottom: 20px; color: var(--text); }
+.modal-close {
+  position: absolute; top: 16px; right: 16px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 50%; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: .85rem; color: var(--text-muted);
+  transition: all .15s;
+}
+.modal-close:hover { background: var(--danger-bg); color: var(--danger); border-color: #FECACA; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+/* ═══════════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════════ */
+.login-left {
+  flex: 1;
+  background: linear-gradient(160deg, #3B0764 0%, #4C1D95 35%, #5B21B6 60%, #7C3AED 85%, #A855F7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.login-left::before {
+  content: '';
+  position: absolute;
+  top: -100px; left: -100px;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: rgba(236,72,153,.15);
+}
+.login-left::after {
+  content: '';
+  position: absolute;
+  bottom: -80px; right: -80px;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: rgba(167,139,250,.12);
+}
+.login-hero { text-align: center; position: relative; z-index: 1; padding: 40px; }
+.login-logo {
+  width: 72px; height: 72px;
+  background: linear-gradient(135deg, #A78BFA, #EC4899);
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; margin: 0 auto 20px;
+  box-shadow: 0 12px 40px rgba(167,139,250,.4);
+}
+.login-hero h1 {
+  font-size: 2.4rem; font-weight: 800; color: white;
+  letter-spacing: -.02em; margin-bottom: 8px;
+}
+.login-hero p { font-size: .95rem; color: rgba(255,255,255,.65); max-width: 320px; margin: 0 auto 32px; }
+.feature-list { list-style: none; text-align: left; display: inline-block; }
+.feature-list li {
+  color: rgba(255,255,255,.75); font-size: .85rem;
+  padding: 5px 0; display: flex; align-items: center; gap: 10px;
+}
+.feature-list li::before {
+  content: '✓';
+  width: 20px; height: 20px;
+  background: rgba(255,255,255,.15);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .7rem; font-weight: 800; flex-shrink: 0;
+}
+.login-right {
+  width: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 40px;
+}
+.login-form-box { width: 100%; max-width: 360px; }
+.login-form-box h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; color: var(--text); }
+.login-form-box .sub { font-size: .82rem; color: var(--text-muted); margin-bottom: 28px; }
+.login-tabs {
+  display: flex; gap: 2px; background: var(--surface3);
+  border-radius: 10px; padding: 3px; margin-bottom: 24px;
+}
+.login-tab {
+  flex: 1; padding: 7px; border-radius: 8px; text-align: center;
+  font-size: .78rem; font-weight: 700; cursor: pointer;
+  transition: all .15s; color: var(--text-muted); border: none; background: none;
+  font-family: var(--font);
+}
+.login-tab.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-sm); }
+.login-field { margin-bottom: 14px; }
+.login-field label { display: block; font-size: .7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
+.login-field input {
+  width: 100%; padding: 11px 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-family: var(--font); font-size: .88rem; color: var(--text);
+  background: var(--surface); outline: none; transition: all .15s;
+}
+.login-field input:focus { border-color: var(--accent-mid); box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
+.btn-login {
+  width: 100%; padding: 12px;
+  background: linear-gradient(135deg, var(--accent), #A855F7);
+  color: white; border: none; border-radius: 10px;
+  font-family: var(--font); font-size: .88rem; font-weight: 800;
+  cursor: pointer; transition: all .15s;
+  box-shadow: 0 4px 14px rgba(124,58,237,.35);
+  margin-top: 6px;
+}
+.btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,58,237,.45); }
+.login-sep { text-align: center; font-size: .72rem; color: var(--text-light); margin: 14px 0; }
+.login-google {
+  width: 100%; padding: 11px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 10px; font-family: var(--font); font-size: .82rem; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all .15s; color: var(--text);
+}
+.login-google:hover { background: var(--surface3); }
+.login-error {
+  background: var(--danger-bg); border: 1px solid #FECACA;
+  border-radius: 9px; padding: 9px 13px;
+  font-size: .78rem; color: var(--danger); margin-bottom: 12px; display: none;
+}
+
+/* ═══════════════════════════════════════════
+   PAGES
+═══════════════════════════════════════════ */
+.page { display: none; }
+.page.active { display: contents; }
+
+/* ═══════════════════════════════════════════
+   TOOLBAR
+═══════════════════════════════════════════ */
+.toolbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.search-input {
+  padding: 8px 14px; border: 1.5px solid var(--border);
+  border-radius: 9px; font-family: var(--font); font-size: .82rem;
+  color: var(--text); background: var(--surface); outline: none;
+  transition: all .15s; width: 200px;
+}
+.search-input:focus { border-color: var(--accent-mid); box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
+.toolbar-select {
+  padding: 7px 12px; border: 1.5px solid var(--border);
+  border-radius: 9px; font-family: var(--font); font-size: .8rem;
+  background: var(--surface); color: var(--text-muted); outline: none; cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════
+   PAGINAÇÃO
+═══════════════════════════════════════════ */
+.pag-wrap { display:flex; align-items:center; gap:4px; padding:12px 0 4px; justify-content:center; flex-wrap:wrap; }
+.pag-btn {
+  min-width:32px; height:32px; border:1.5px solid var(--border);
+  background:var(--surface); color:var(--text-muted);
+  border-radius:8px; font-size:.78rem; font-weight:700; cursor:pointer;
+  font-family:var(--font); transition:all .15s;
+  display:inline-flex; align-items:center; justify-content:center; padding:0 8px;
+}
+.pag-btn:hover:not([disabled]) { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
+.pag-btn[disabled] { opacity:.35; cursor:default; }
+.pag-btn.pag-ativa { background:var(--accent); color:#fff; border-color:var(--accent); }
+.pag-label { font-size:.72rem; color:var(--text-muted); margin-left:8px; }
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--text); color: white;
+  padding: 10px 20px; border-radius: 999px;
+  font-size: .82rem; font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  z-index: 9999; opacity: 0;
+  transition: opacity .3s; pointer-events: none;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; }
+
+/* ═══════════════════════════════════════════
+   PERFIL PÚBLICO
+═══════════════════════════════════════════ */
+.perfil-preview {
+  background: linear-gradient(135deg, #3B0764, #7C3AED);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  color: white;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.perfil-preview::before {
+  content: ''; position: absolute; top: -30px; right: -30px;
+  width: 120px; height: 120px; border-radius: 50%;
+  background: rgba(255,255,255,.06);
+}
+.perfil-av {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, #A78BFA, #EC4899);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; font-weight: 800; margin: 0 auto 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+}
+.perfil-preview h3 { font-size: 1rem; font-weight: 800; margin-bottom: 2px; }
+.perfil-preview p  { font-size: .78rem; opacity: .7; }
+.servico-chip {
+  display: inline-block; background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 999px; padding: 4px 12px;
+  font-size: .72rem; font-weight: 600; margin: 3px;
+}
+.link-agendamento {
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+  border-radius: 10px; padding: 10px 14px;
+  font-size: .72rem; font-family: var(--mono);
+  color: rgba(255,255,255,.8); word-break: break-all;
+  margin-top: 14px; text-align: left;
+}
+
+/* ═══════════════════════════════════════════
+   TIMELINE DE AGENDAMENTO
+═══════════════════════════════════════════ */
+.timeline {
+  position: relative;
+  padding-left: 24px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px; top: 8px; bottom: 8px;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent-mid), var(--pink));
+  border-radius: 2px;
+}
+.tl-item {
+  position: relative;
+  margin-bottom: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+  transition: all .15s;
+}
+.tl-item:hover { transform: translateX(3px); box-shadow: var(--shadow-md); }
+.tl-item::before {
+  content: '';
+  position: absolute;
+  left: -20px; top: 16px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+}
+.tl-time { font-family: var(--mono); font-size: .7rem; font-weight: 500; color: var(--text-muted); margin-bottom: 4px; }
+.tl-client { font-size: .85rem; font-weight: 700; color: var(--text); }
+.tl-service { font-size: .74rem; color: var(--text-muted); }
+
+/* ═══════════════════════════════════════════
+   ESTATÍSTICAS
+═══════════════════════════════════════════ */
+.stat-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-icon { font-size: 1.1rem; width: 32px; text-align: center; }
+.stat-label { flex: 1; font-size: .82rem; color: var(--text-muted); }
+.stat-val { font-size: .88rem; font-weight: 800; color: var(--text); }
+.stat-bar-wrap { flex: 1; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
+.stat-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--pink)); }
+
+/* ═══════════════════════════════════════════
+   PLANO BADGE
+═══════════════════════════════════════════ */
+.plano-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: .65rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+}
+.plano-free { background: var(--surface3); color: var(--text-muted); }
+.plano-pro  { background: linear-gradient(135deg, #EDE9FE, #FCE7F3); color: var(--accent); }
+.plano-premium { background: linear-gradient(135deg, var(--accent), var(--pink)); color: white; }
+
+/* ═══════════════════════════════════════════
+   MOBILE
+═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed; left: -100%; top: 0; bottom: 0; z-index: 200;
+    transition: left .25s ease;
+    width: 260px;
+  }
+  .sidebar.open { left: 0; }
+  .sidebar-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5); z-index: 199;
+  }
+  .sidebar-overlay.show { display: block; }
+  .hamburger { display: flex; }
+  .login-left { display: none; }
+  .login-right { width: 100%; }
+  .agenda-layout { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .span-2, .form-grid .span-3 { grid-column: span 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     LOGIN
+════════════════════════════════════════ -->
+<div id="appLogin">
+  <div class="login-left">
+    <div class="login-hero">
+      <div class="login-logo">📅</div>
+      <h1>AgendaPro</h1>
+      <p>Sistema de agendamentos inteligente para salões, clínicas e profissionais</p>
+      <ul class="feature-list">
+        <li>Agenda online com link de agendamento</li>
+        <li>Lembretes automáticos para clientes</li>
+        <li>Controle financeiro integrado</li>
+        <li>Relatórios de desempenho</li>
+        <li>Multi-profissional e multi-unidade</li>
+      </ul>
+    </div>
+  </div>
+  <div class="login-right">
+    <div class="login-form-box">
+      <h2>Bom ter você aqui 👋</h2>
+      <p class="sub">Faça login ou crie sua conta grátis</p>
+      <div class="login-tabs">
+        <button class="login-tab active" onclick="loginAba('entrar')">Entrar</button>
+        <button class="login-tab"        onclick="loginAba('cadastrar')">Criar conta</button>
+      </div>
+      <div id="loginError" class="login-error">E-mail ou senha incorretos.</div>
+
+      <!-- Entrar -->
+      <div id="formEntrar">
+        <div class="login-field"><label>E-mail</label><input type="email" id="loginEmail" placeholder="seu@email.com"></div>
+        <div class="login-field"><label>Senha</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+        <button class="btn-login" onclick="fazerLogin()">Entrar na conta →</button>
+        <div class="login-sep">ou entre com</div>
+        <button class="login-google" onclick="loginDemo()">🎯 Entrar com conta demo</button>
+      </div>
+
+      <!-- Cadastrar -->
+      <div id="formCadastrar" style="display:none">
+        <div class="login-field"><label>Nome do estabelecimento</label><input type="text" id="cadNome" placeholder="Ex: Salão da Ana"></div>
+        <div class="login-field"><label>Tipo de negócio</label>
+          <select id="cadTipo" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:var(--font);font-size:.88rem;background:var(--surface);color:var(--text);outline:none">
+            <option value="salao">💇 Salão de beleza</option>
+            <option value="barbearia">✂️ Barbearia</option>
+            <option value="clinica">🏥 Clínica / Consultório</option>
+            <option value="estetica">💅 Estética</option>
+            <option value="personal">🏋️ Personal trainer</option>
+            <option value="outros">📋 Outros</option>
+          </select>
+        </div>
+        <div class="login-field"><label>E-mail</label><input type="email" id="cadEmail" placeholder="seu@email.com"></div>
+        <div class="login-field"><label>Senha</label><input type="password" id="cadSenha" placeholder="Mínimo 6 caracteres"></div>
+        <button class="btn-login" onclick="fazerCadastro()">Criar conta grátis →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     APP SHELL
+════════════════════════════════════════ -->
+<div id="appShell">
+  <div class="sidebar" id="sidebar">
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-logo">📅</div>
+      <div class="brand-text">
+        <h1>AgendaPro</h1>
+        <p>Sistema de Agendamentos</p>
+      </div>
+    </div>
+
+    <!-- Negócio -->
+    <div class="sidebar-biz">
+      <div class="biz-label">Estabelecimento</div>
+      <div class="biz-name" id="sidebarBiz">Meu Negócio</div>
+    </div>
+
+    <!-- Nav -->
+    <div class="nav-group">
+      <div class="nav-label">Principal</div>
+      <button class="nav-item active" data-page="dashboard" onclick="navegar('dashboard');closeSidebar()">
+        <span class="nav-ico">📊</span> Dashboard
+      </button>
+      <button class="nav-item" data-page="agenda" onclick="navegar('agenda');closeSidebar()">
+        <span class="nav-ico">📅</span> Agenda
+      </button>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Gestão</div>
+      <button class="nav-item" data-page="agendamentos" onclick="navegar('agendamentos');closeSidebar()">
+        <span class="nav-ico">🗓️</span> Agendamentos
+      </button>
+      <button class="nav-item" data-page="clientes" onclick="navegar('clientes');closeSidebar()">
+        <span class="nav-ico">👥</span> Clientes
+      </button>
+      <button class="nav-item" data-page="servicos" onclick="navegar('servicos');closeSidebar()">
+        <span class="nav-ico">✂️</span> Serviços
+      </button>
+      <button class="nav-item" data-page="profissionais" onclick="navegar('profissionais');closeSidebar()">
+        <span class="nav-ico">👤</span> Profissionais
+      </button>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Financeiro</div>
+      <button class="nav-item" data-page="financeiro" onclick="navegar('financeiro');closeSidebar()">
+        <span class="nav-ico">💰</span> Financeiro
+      </button>
+      <button class="nav-item" data-page="relatorios" onclick="navegar('relatorios');closeSidebar()">
+        <span class="nav-ico">📈</span> Relatórios
+      </button>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Conta</div>
+      <button class="nav-item" data-page="perfil_publico" onclick="navegar('perfil_publico');closeSidebar()">
+        <span class="nav-ico">🌐</span> Perfil Público
+      </button>
+      <button class="nav-item" data-page="configuracoes" onclick="navegar('configuracoes');closeSidebar()">
+        <span class="nav-ico">⚙️</span> Configurações
+      </button>
+      <button class="nav-item" data-page="plano" onclick="navegar('plano');closeSidebar()">
+        <span class="nav-ico">💎</span> Meu Plano
+      </button>
+    </div>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-av" id="userAv">U</div>
+        <div class="user-info">
+          <div class="user-name" id="userName">Usuário</div>
+          <div class="user-role" id="userRole">Admin</div>
+        </div>
+        <button class="btn-sair" onclick="fazerLogout()" title="Sair">⎋</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- Main -->
+  <div class="main-area">
+    <!-- Top bar -->
+    <div class="top-bar">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+      <div class="top-bar-left">
+        <div class="page-title" id="topTitle">Dashboard</div>
+        <div class="page-subtitle" id="topSub">Visão geral do seu negócio</div>
+      </div>
+      <div class="top-bar-actions">
+        <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Agendar</button>
+      </div>
+    </div>
+
+    <!-- Pages -->
+    <div class="page-area" id="pageArea">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="page active" id="pageDashboard">
+        <div class="kpi-grid">
+          <div class="kpi-card purple">
+            <div class="kpi-ico">📅</div>
+            <div class="kpi-val" id="kpiHoje">0</div>
+            <div class="kpi-label">Agendamentos hoje</div>
+          </div>
+          <div class="kpi-card pink">
+            <div class="kpi-ico">💰</div>
+            <div class="kpi-val" id="kpiReceitaHoje">R$ 0</div>
+            <div class="kpi-label">Receita hoje</div>
+          </div>
+          <div class="kpi-card teal">
+            <div class="kpi-ico">👥</div>
+            <div class="kpi-val" id="kpiClientes">0</div>
+            <div class="kpi-label">Clientes cadastrados</div>
+          </div>
+          <div class="kpi-card amber">
+            <div class="kpi-ico">📊</div>
+            <div class="kpi-val" id="kpiMes">R$ 0</div>
+            <div class="kpi-label">Receita no mês</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:16px">
+          <!-- Próximos agendamentos -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">📅 Agenda de Hoje</div>
+                <div class="card-sub" id="dashData">—</div>
+              </div>
+              <button class="btn btn-sm btn-ghost" onclick="navegar('agenda')">Ver agenda →</button>
+            </div>
+            <div class="timeline" id="dashTimeline">
+              <div style="text-align:center;padding:24px;color:var(--text-light)">
+                <span style="font-size:2rem;display:block;margin-bottom:8px">📅</span>
+                Nenhum agendamento para hoje
+              </div>
+            </div>
+          </div>
+
+          <!-- Resumo -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📈 Esta semana</div>
+              </div>
+              <div id="dashResumoSemana">
+                <div class="stat-row"><span class="stat-icon">✅</span><span class="stat-label">Confirmados</span><span class="stat-val" id="statConfirmados">0</span></div>
+                <div class="stat-row"><span class="stat-icon">⏳</span><span class="stat-label">Pendentes</span><span class="stat-val" id="statPendentes">0</span></div>
+                <div class="stat-row"><span class="stat-icon">✂️</span><span class="stat-label">Concluídos</span><span class="stat-val" id="statConcluidos">0</span></div>
+                <div class="stat-row"><span class="stat-icon">❌</span><span class="stat-label">Cancelados</span><span class="stat-val" id="statCancelados">0</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">🏆 Serviços top</div></div>
+              <div id="dashTopServicos">
+                <div style="color:var(--text-light);font-size:.8rem;text-align:center;padding:12px">Sem dados ainda</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── AGENDA ── -->
+      <div class="page" id="pageAgenda">
+        <div class="agenda-layout">
+          <!-- Calendário -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📅 Calendário</div>
+              <button class="btn btn-sm btn-primary" onclick="abrirNovoAgendamento()">+ Novo</button>
+            </div>
+            <div class="calendar-nav">
+              <button class="cal-btn" onclick="calNavegar(-1)">‹ Anterior</button>
+              <span class="cal-month" id="calMesAno">—</span>
+              <button class="cal-btn" onclick="calNavegar(1)">Próximo ›</button>
+            </div>
+            <div class="cal-grid" id="calGrid">
+              <div class="cal-day-name">Dom</div>
+              <div class="cal-day-name">Seg</div>
+              <div class="cal-day-name">Ter</div>
+              <div class="cal-day-name">Qua</div>
+              <div class="cal-day-name">Qui</div>
+              <div class="cal-day-name">Sex</div>
+              <div class="cal-day-name">Sáb</div>
+            </div>
+          </div>
+
+          <!-- Agenda do dia -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Horários</div>
+                <div class="card-sub" id="agendaDiaSub">Selecione um dia</div>
+              </div>
+            </div>
+            <div class="agenda-slots" id="agendaSlots">
+              <div style="text-align:center;padding:24px;color:var(--text-light)">
+                <span style="display:block;font-size:1.5rem;margin-bottom:6px">📅</span>
+                Clique em um dia para ver
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── AGENDAMENTOS ── -->
+      <div class="page" id="pageAgendamentos">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🗓️ Todos os Agendamentos</div>
+            <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo agendamento</button>
+          </div>
+          <div class="toolbar" style="margin-bottom:14px">
+            <input class="search-input" type="text" placeholder="Buscar cliente..." oninput="agendRender()" id="agendSearch">
+            <select class="toolbar-select" onchange="agendRender()" id="agendFiltroStatus">
+              <option value="">Todos os status</option>
+              <option value="pendente">⏳ Pendente</option>
+              <option value="confirmado">✅ Confirmado</option>
+              <option value="concluido">✂️ Concluído</option>
+              <option value="cancelado">❌ Cancelado</option>
+            </select>
+            <select class="toolbar-select" onchange="agendRender()" id="agendFiltroProfissional">
+              <option value="">Todos os profissionais</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data/Hora</th>
+                  <th>Cliente</th>
+                  <th>Serviço</th>
+                  <th>Profissional</th>
+                  <th>Valor</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="agendTbody"></tbody>
+            </table>
+          </div>
+          <div class="pag-wrap" id="agend_pag"></div>
+        </div>
+      </div>
+
+      <!-- ── CLIENTES ── -->
+      <div class="page" id="pageClientes">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👥 Clientes</div>
+            <button class="btn btn-primary btn-sm" onclick="abrirNovoCliente()">+ Novo cliente</button>
+          </div>
+          <div class="toolbar" style="margin-bottom:14px">
+            <input class="search-input" type="text" placeholder="Buscar por nome ou telefone..." oninput="clienteRender()" id="clienteSearch">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Total visitas</th><th>Último atend.</th><th></th></tr>
+              </thead>
+              <tbody id="clienteTbody"></tbody>
+            </table>
+          </div>
+          <div class="pag-wrap" id="cliente_pag"></div>
+        </div>
+      </div>
+
+      <!-- ── SERVIÇOS ── -->
+      <div class="page" id="pageServicos">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">✂️ Serviços</div>
+            <button class="btn btn-primary btn-sm" onclick="abrirNovoServico()">+ Novo serviço</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Serviço</th><th>Categoria</th><th>Duração</th><th>Preço</th><th>Ativo</th><th></th></tr>
+              </thead>
+              <tbody id="servicoTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PROFISSIONAIS ── -->
+      <div class="page" id="pageProfissionais">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👤 Profissionais</div>
+            <button class="btn btn-primary btn-sm" onclick="abrirNovoProfissional()">+ Novo profissional</button>
+          </div>
+          <div id="profGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:4px"></div>
+        </div>
+      </div>
+
+      <!-- ── FINANCEIRO ── -->
+      <div class="page" id="pageFinanceiro">
+        <div class="kpi-grid" style="margin-bottom:16px">
+          <div class="kpi-card purple"><div class="kpi-ico">📅</div><div class="kpi-val" id="finHoje">R$ 0</div><div class="kpi-label">Hoje</div></div>
+          <div class="kpi-card pink"><div class="kpi-ico">📆</div><div class="kpi-val" id="finSemana">R$ 0</div><div class="kpi-label">Esta semana</div></div>
+          <div class="kpi-card teal"><div class="kpi-ico">🗓️</div><div class="kpi-val" id="finMes">R$ 0</div><div class="kpi-label">Este mês</div></div>
+          <div class="kpi-card amber"><div class="kpi-ico">💳</div><div class="kpi-val" id="finTicket">R$ 0</div><div class="kpi-label">Ticket médio</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">💰 Lançamentos</div>
+            <div style="display:flex;gap:8px">
+              <select class="toolbar-select" onchange="finRender()" id="finFiltroMes">
+                <option value="">Todos os períodos</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="exportFinCSV()">⬇ CSV</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>Profissional</th><th>Forma</th><th>Valor</th><th>Status</th></tr>
+              </thead>
+              <tbody id="finTbody"></tbody>
+            </table>
+          </div>
+          <div class="pag-wrap" id="fin_pag"></div>
+        </div>
+      </div>
+
+      <!-- ── RELATÓRIOS ── -->
+      <div class="page" id="pageRelatorios">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-header"><div class="card-title">🏆 Top Serviços</div></div>
+            <div id="relTopServicos"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">👤 Top Profissionais</div></div>
+            <div id="relTopProfissionais"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">📅 Agendamentos por dia da semana</div></div>
+            <div id="relDiaSemana"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">💰 Receita por mês</div></div>
+            <div id="relReceitaMes"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PERFIL PÚBLICO ── -->
+      <div class="page" id="pagePerfilPublico">
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🌐 Configurar perfil público</div>
+            </div>
+            <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:16px">Seu perfil público é a página que seus clientes acessam para agendar. Configure e compartilhe o link!</p>
+            <div class="form-grid">
+              <div class="field span-2"><label>Nome do estabelecimento</label><input type="text" id="ppNome" placeholder="Ex: Salão da Ana"></div>
+              <div class="field span-2"><label>Descrição / slogan</label><textarea id="ppDesc" placeholder="Ex: Especialistas em coloração e corte moderno..."></textarea></div>
+              <div class="field"><label>Telefone / WhatsApp</label><input type="tel" id="ppTel" placeholder="(11) 99999-9999"></div>
+              <div class="field"><label>Endereço</label><input type="text" id="ppEndereco" placeholder="Rua, número, bairro, cidade"></div>
+              <div class="field"><label>Instagram</label><input type="text" id="ppInsta" placeholder="@seuinstagram"></div>
+              <div class="field"><label>Horário de funcionamento</label><input type="text" id="ppHorario" placeholder="Seg–Sex: 9h–19h, Sáb: 9h–17h"></div>
+            </div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="salvarPerfil()">💾 Salvar perfil</button></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="perfil-preview" id="perfilPreview">
+              <div class="perfil-av" id="ppAvPreview">S</div>
+              <h3 id="ppNomePreview">Seu estabelecimento</h3>
+              <p id="ppDescPreview">Sua descrição aqui</p>
+              <div style="margin:12px 0" id="ppServicosPreview"></div>
+              <div class="link-agendamento" id="ppLink">agendapro.com.br/agendar/SEU-SLUG</div>
+              <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.2);margin-top:10px;width:100%" onclick="copiarLink()">📋 Copiar link de agendamento</button>
+            </div>
+            <div class="card">
+              <div class="card-title" style="margin-bottom:8px">📲 QR Code do agendamento</div>
+              <div id="qrCodeArea" style="text-align:center;padding:16px;background:var(--surface2);border-radius:10px">
+                <div style="font-size:.8rem;color:var(--text-muted)">Salve o perfil para gerar o QR Code</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CONFIGURAÇÕES ── -->
+      <div class="page" id="pageConfiguracoes">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-header"><div class="card-title">⚙️ Configurações gerais</div></div>
+            <div class="form-grid">
+              <div class="field span-2"><label>Nome do negócio</label><input type="text" id="cfgNome" placeholder="Ex: Salão da Ana"></div>
+              <div class="field"><label>Intervalo mínimo (min)</label><input type="number" id="cfgIntervalo" value="30" min="15" max="120" step="15"></div>
+              <div class="field"><label>Fuso horário</label>
+                <select id="cfgFuso">
+                  <option>America/Sao_Paulo</option>
+                  <option>America/Manaus</option>
+                  <option>America/Belem</option>
+                  <option>America/Fortaleza</option>
+                </select>
+              </div>
+              <div class="field span-2"><label>Mensagem de confirmação (WhatsApp)</label>
+                <textarea id="cfgMsgConfirmacao">Olá {cliente}! Seu agendamento de {servico} está confirmado para {data} às {hora}. Até lá! 😊</textarea>
+              </div>
+              <div class="field span-2"><label>Mensagem de lembrete</label>
+                <textarea id="cfgMsgLembrete">Oi {cliente}, lembrando do seu agendamento amanhã às {hora} para {servico}. Qualquer dúvida é só chamar!</textarea>
+              </div>
+            </div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="salvarConfig()">💾 Salvar</button></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">🕐 Horários de funcionamento</div></div>
+            <div id="horariosFuncDiv"></div>
+            <div class="form-actions" style="margin-top:14px"><button class="btn btn-primary" onclick="salvarHorarios()">💾 Salvar horários</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PLANO ── -->
+      <div class="page" id="pagePlano">
+        <div class="card" style="max-width:700px;margin:0 auto">
+          <div style="text-align:center;margin-bottom:28px">
+            <div style="font-size:2.5rem;margin-bottom:8px">💎</div>
+            <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:4px">Escolha seu plano</h2>
+            <p style="font-size:.85rem;color:var(--text-muted)">Comece grátis e escale conforme crescer</p>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+            <div style="border:2px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+              <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:8px">Free</div>
+              <div style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px">R$ 0</div>
+              <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:16px">Para sempre</div>
+              <ul style="list-style:none;font-size:.78rem;color:var(--text-muted);text-align:left;display:flex;flex-direction:column;gap:6px">
+                <li>✅ 1 profissional</li>
+                <li>✅ 50 agendamentos/mês</li>
+                <li>✅ 100 clientes</li>
+                <li>❌ Link de agendamento</li>
+                <li>❌ Lembretes automáticos</li>
+              </ul>
+            </div>
+            <div style="border:2px solid var(--accent);border-radius:14px;padding:20px;text-align:center;background:var(--accent-soft);position:relative">
+              <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:white;padding:2px 14px;border-radius:999px;font-size:.65rem;font-weight:800;white-space:nowrap">⭐ MAIS POPULAR</div>
+              <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:8px">Pro</div>
+              <div style="font-size:1.8rem;font-weight:800;color:var(--accent);margin-bottom:4px">R$ 79</div>
+              <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:16px">por mês</div>
+              <ul style="list-style:none;font-size:.78rem;color:var(--text-muted);text-align:left;display:flex;flex-direction:column;gap:6px">
+                <li>✅ 3 profissionais</li>
+                <li>✅ Agendamentos ilimitados</li>
+                <li>✅ Clientes ilimitados</li>
+                <li>✅ Link de agendamento</li>
+                <li>✅ Lembretes WhatsApp</li>
+              </ul>
+              <button class="btn btn-primary" style="width:100%;margin-top:16px;justify-content:center" onclick="toast('🚀 Em breve!')">Assinar Pro</button>
+            </div>
+            <div style="border:2px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+              <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:8px">Premium</div>
+              <div style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px">R$ 159</div>
+              <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:16px">por mês</div>
+              <ul style="list-style:none;font-size:.78rem;color:var(--text-muted);text-align:left;display:flex;flex-direction:column;gap:6px">
+                <li>✅ Profissionais ilimitados</li>
+                <li>✅ Agendamentos ilimitados</li>
+                <li>✅ Multi-unidade</li>
+                <li>✅ API pública</li>
+                <li>✅ Suporte prioritário</li>
+              </ul>
+              <button class="btn btn-secondary" style="width:100%;margin-top:16px;justify-content:center" onclick="toast('🚀 Em breve!')">Assinar Premium</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-area -->
+  </div><!-- /main-area -->
+</div><!-- /appShell -->
+
+<!-- ════════════════════════════════════════
+     MODAIS
+════════════════════════════════════════ -->
+
+<!-- Modal: Novo Agendamento -->
+<div class="modal-overlay" id="modalAgend">
+  <div class="modal">
+    <button class="modal-close" onclick="fecharModal('modalAgend')">✕</button>
+    <h3 id="modalAgendTitulo">📅 Novo Agendamento</h3>
+    <input type="hidden" id="agendEditId">
+    <div class="form-grid">
+      <div class="field">
+        <label>Data</label>
+        <input type="date" id="agendData">
+      </div>
+      <div class="field">
+        <label>Horário</label>
+        <input type="time" id="agendHora">
+      </div>
+      <div class="field span-2">
+        <label>Cliente</label>
+        <input type="text" id="agendCliente" placeholder="Nome do cliente" list="clientesSugg">
+        <datalist id="clientesSugg"></datalist>
+      </div>
+      <div class="field">
+        <label>Telefone</label>
+        <input type="tel" id="agendTel" placeholder="(11) 99999-9999">
+      </div>
+      <div class="field">
+        <label>Serviço</label>
+        <select id="agendServico"></select>
+      </div>
+      <div class="field">
+        <label>Profissional</label>
+        <select id="agendProfissional"></select>
+      </div>
+      <div class="field">
+        <label>Forma de pagamento</label>
+        <select id="agendForma">
+          <option value="pix">PIX</option>
+          <option value="dinheiro">Dinheiro</option>
+          <option value="cartao_debito">Cartão débito</option>
+          <option value="cartao_credito">Cartão crédito</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="agendStatus">
+          <option value="pendente">⏳ Pendente</option>
+          <option value="confirmado">✅ Confirmado</option>
+          <option value="concluido">✂️ Concluído</option>
+          <option value="cancelado">❌ Cancelado</option>
+        </select>
+      </div>
+      <div class="field span-2">
+        <label>Observação</label>
+        <textarea id="agendObs" placeholder="Alguma observação..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModal('modalAgend')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarAgendamento()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Novo Cliente -->
+<div class="modal-overlay" id="modalCliente">
+  <div class="modal">
+    <button class="modal-close" onclick="fecharModal('modalCliente')">✕</button>
+    <h3 id="modalClienteTitulo">👥 Novo Cliente</h3>
+    <input type="hidden" id="clienteEditId">
+    <div class="form-grid">
+      <div class="field span-2"><label>Nome completo</label><input type="text" id="clienteNome" placeholder="Nome do cliente"></div>
+      <div class="field"><label>Telefone / WhatsApp</label><input type="tel" id="clienteTel" placeholder="(11) 99999-9999"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="clienteEmail" placeholder="email@exemplo.com"></div>
+      <div class="field"><label>Data de nascimento</label><input type="date" id="clienteNasc"></div>
+      <div class="field"><label>Como conheceu?</label>
+        <select id="clienteOrigem">
+          <option value="">Não informado</option>
+          <option value="indicacao">Indicação</option>
+          <option value="instagram">Instagram</option>
+          <option value="google">Google</option>
+          <option value="passando">Passando na rua</option>
+          <option value="outros">Outros</option>
+        </select>
+      </div>
+      <div class="field span-2"><label>Observações / preferências</label><textarea id="clienteObs" placeholder="Preferências, alergias, observações..."></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModal('modalCliente')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCliente()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Novo Serviço -->
+<div class="modal-overlay" id="modalServico">
+  <div class="modal">
+    <button class="modal-close" onclick="fecharModal('modalServico')">✕</button>
+    <h3 id="modalServicoTitulo">✂️ Novo Serviço</h3>
+    <input type="hidden" id="servicoEditId">
+    <div class="form-grid">
+      <div class="field span-2"><label>Nome do serviço</label><input type="text" id="servicoNome" placeholder="Ex: Corte masculino"></div>
+      <div class="field"><label>Categoria</label>
+        <select id="servicoCateg">
+          <option value="corte">✂️ Corte</option>
+          <option value="coloracao">🎨 Coloração</option>
+          <option value="tratamento">💆 Tratamento</option>
+          <option value="estetica">💅 Estética</option>
+          <option value="barba">🧔 Barba</option>
+          <option value="outros">📋 Outros</option>
+        </select>
+      </div>
+      <div class="field"><label>Duração (minutos)</label><input type="number" id="servicoDuracao" value="60" min="15" step="15"></div>
+      <div class="field"><label>Preço (R$)</label><input type="number" id="servicoPreco" step="0.01" min="0" placeholder="0.00"></div>
+      <div class="field"><label>Comissão profissional (%)</label><input type="number" id="servicoComissao" value="40" min="0" max="100"></div>
+      <div class="field span-2"><label>Descrição</label><textarea id="servicoDesc" placeholder="Descrição do serviço para o perfil público..."></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModal('modalServico')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarServico()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Novo Profissional -->
+<div class="modal-overlay" id="modalProf">
+  <div class="modal">
+    <button class="modal-close" onclick="fecharModal('modalProf')">✕</button>
+    <h3 id="modalProfTitulo">👤 Novo Profissional</h3>
+    <input type="hidden" id="profEditId">
+    <div class="form-grid">
+      <div class="field span-2"><label>Nome</label><input type="text" id="profNome" placeholder="Nome do profissional"></div>
+      <div class="field"><label>Especialidade</label><input type="text" id="profEspec" placeholder="Ex: Colorista, Barbeiro..."></div>
+      <div class="field"><label>Telefone</label><input type="tel" id="profTel" placeholder="(11) 99999-9999"></div>
+      <div class="field span-2"><label>E-mail</label><input type="email" id="profEmail" placeholder="email@exemplo.com"></div>
+      <div class="field"><label>Comissão padrão (%)</label><input type="number" id="profComissao" value="40" min="0" max="100"></div>
+      <div class="field"><label>Cor na agenda</label><input type="color" id="profCor" value="#7C3AED" style="height:42px;padding:4px;cursor:pointer"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModal('modalProf')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarProfissional()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════
+   SUPABASE CONFIG
+═══════════════════════════════════════════ */
+const SUPABASE_URL = 'COLE_SUPABASE_URL_AQUI';
+const SUPABASE_KEY = 'COLE_SUPABASE_ANON_KEY_AQUI';
+const _sb = (SUPABASE_KEY && !SUPABASE_KEY.startsWith('COLE_'))
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
+
+/* ═══════════════════════════════════════════
+   ESTADO GLOBAL
+═══════════════════════════════════════════ */
+let currentUser    = null;
+let currentNegocio = null;
+let agendamentos   = [];
+let clientes       = [];
+let servicos       = [];
+let profissionais  = [];
+let configNegocio  = {};
+
+let calAno = new Date().getFullYear();
+let calMes = new Date().getMonth();
+let calDiaSel = null;
+
+const PAGINAS = {};
+const POR_PAG = 12;
+
+/* ═══════════════════════════════════════════
+   UTILITÁRIOS
+═══════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const uid = () => Math.random().toString(36).substr(2,14) + Date.now().toString(36);
+const hoje = () => new Date().toISOString().slice(0,10);
+const mesAtual = () => new Date().toISOString().slice(0,7);
+
+function moeda(v) {
+  return 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function toast(msg, dur=3000) {
+  const t = $('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function fecharModal(id) { $(id).classList.remove('open'); }
+
+function toggleSidebar() {
+  $('sidebar').classList.toggle('open');
+  $('sidebarOverlay').classList.toggle('show');
+}
+function closeSidebar() {
+  $('sidebar').classList.remove('open');
+  $('sidebarOverlay').classList.remove('show');
+}
+
+/* ═══════════════════════════════════════════
+   PAGINAÇÃO
+═══════════════════════════════════════════ */
+function pagGet(id) { return PAGINAS[id] || 1; }
+function pagSet(id, p) { PAGINAS[id] = p; }
+function pagReset(id) { PAGINAS[id] = 1; }
+function pagSlice(lista, id) {
+  const p = pagGet(id);
+  return lista.slice((p-1)*POR_PAG, p*POR_PAG);
+}
+function pagControle(total, pid) {
+  const ctrl = $(pid + '_pag');
+  if (!ctrl) return;
+  const pag = pagGet(pid);
+  const totPags = Math.ceil(total / POR_PAG);
+  if (total <= POR_PAG) { ctrl.style.display = 'none'; return; }
+  ctrl.style.display = 'flex';
+  var h = '';
+  h += '<button class="pag-btn" onclick="pagIr(\''+ pid +'\','+(pag-1)+','+totPags+')"'+(pag<=1?' disabled':'')+'>&#8249;</button>';
+  for (var pi=1; pi<=totPags; pi++) {
+    if (totPags>7 && pi!==1 && pi!==totPags && Math.abs(pi-pag)>1) {
+      if (pi===2||pi===totPags-1) h += '<span style="padding:0 4px;color:var(--text-muted)">&#8230;</span>';
+      continue;
+    }
+    h += '<button class="pag-btn '+(pi===pag?'pag-ativa':'')+'" onclick="pagIr(\''+ pid +'\','+pi+','+totPags+')">'+pi+'</button>';
+  }
+  h += '<button class="pag-btn" onclick="pagIr(\''+ pid +'\','+(pag+1)+','+totPags+')"'+(pag>=totPags?' disabled':'')+'>&#8250;</button>';
+  h += '<span class="pag-label">'+((pag-1)*POR_PAG+1)+'&#8211;'+Math.min(pag*POR_PAG,total)+' de '+total+'</span>';
+  ctrl.innerHTML = h;
+}
+function pagIr(id, p, total) {
+  if (p<1||p>total) return;
+  pagSet(id, p);
+  var _fn={agend:agendRender,cliente:clienteRender,fin:finRender}; if(_fn[id]) _fn[id]();
+}
+
+/* ═══════════════════════════════════════════
+   LOCAL STORAGE
+═══════════════════════════════════════════ */
+function getKey(mod) { return `ap_${(currentNegocio && currentNegocio.id)||'guest'}_${mod}`; }
+function salvar(mod, data) {
+  try { localStorage.setItem(getKey(mod), JSON.stringify(data)); } catch(e) {}
+}
+function carregar(mod) {
+  try { const d = localStorage.getItem(getKey(mod)); return d ? JSON.parse(d) : []; } catch(e) { return []; }
+}
+function carregarObj(mod, def={}) {
+  try { const d = localStorage.getItem(getKey(mod)); return d ? JSON.parse(d) : def; } catch(e) { return def; }
+}
+
+/* ═══════════════════════════════════════════
+   LOGIN / AUTH
+═══════════════════════════════════════════ */
+function loginAba(aba) {
+  document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  $('formEntrar').style.display    = aba === 'entrar'    ? '' : 'none';
+  $('formCadastrar').style.display = aba === 'cadastrar' ? '' : 'none';
+}
+
+function loginDemo() {
+  const user = { id: 'demo', name: 'Usuário Demo', email: 'demo@agendapro.com.br' };
+  const neg  = { id: 'demo_neg', name: 'Salão Demo', tipo: 'salao' };
+  iniciarApp(user, neg);
+}
+
+async function fazerLogin() {
+  const email = $('loginEmail').value.trim();
+  const pass  = $('loginPass').value;
+  if (!email || !pass) { $('loginError').style.display='block'; $('loginError').textContent='Preencha e-mail e senha.'; return; }
+
+  if (_sb) {
+    const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
+    if (error) { $('loginError').style.display='block'; return; }
+    const user = { id: data.user.id, name: (data.user.user_metadata && data.user.user_metadata.name) || email.split('@')[0], email: data.user.email };
+    const neg  = await carregarNegocio(user.id);
+    iniciarApp(user, neg);
+  } else {
+    loginDemo();
+  }
+}
+
+async function fazerCadastro() {
+  const nome  = $('cadNome').value.trim();
+  const tipo  = $('cadTipo').value;
+  const email = $('cadEmail').value.trim();
+  const senha = $('cadSenha').value;
+  if (!nome||!email||!senha) { toast('⚠️ Preencha todos os campos'); return; }
+  if (senha.length < 6)      { toast('⚠️ Senha mínimo 6 caracteres'); return; }
+
+  if (_sb) {
+    const { data, error } = await _sb.auth.signUp({
+      email, password: senha,
+      options: { data: { name: nome } }
+    });
+    if (error) { toast('❌ ' + error.message); return; }
+    const neg = { id: uid(), name: nome, tipo, owner: data.user.id };
+    await _sb.from('negocios').insert(neg);
+    const user = { id: data.user.id, name: nome, email };
+    iniciarApp(user, neg);
+  } else {
+    const user = { id: uid(), name: nome, email };
+    const neg  = { id: uid(), name: nome, tipo };
+    iniciarApp(user, neg);
+  }
+}
+
+async function carregarNegocio(userId) {
+  if (!_sb) return { id: 'demo_neg', name: 'Meu Negócio', tipo: 'salao' };
+  const { data } = await _sb.from('negocios').select('*').eq('owner', userId).single();
+  return data || { id: uid(), name: 'Meu Negócio', tipo: 'salao' };
+}
+
+function fazerLogout() {
+  if (_sb) _sb.auth.signOut();
+  $('appShell').style.display = 'none';
+  $('appLogin').style.display = 'flex';
+}
+
+/* ═══════════════════════════════════════════
+   INICIAR APP
+═══════════════════════════════════════════ */
+async function iniciarApp(user, neg) {
+  currentUser    = user;
+  currentNegocio = neg;
+
+  $('appLogin').style.display = 'none';
+  $('appShell').style.display = 'flex';
+
+  $('sidebarBiz').textContent = neg.name || 'Meu Negócio';
+  $('userName').textContent   = user.name || user.email;
+  $('userAv').textContent     = (user.name||'U')[0].toUpperCase();
+
+  // Carregar dados
+  agendamentos  = carregar('agendamentos');
+  clientes      = carregar('clientes');
+  servicos      = carregar('servicos');
+  profissionais = carregar('profissionais');
+  configNegocio = carregarObj('config', {});
+
+  // Seed demo se vazio
+  if (neg.id === 'demo_neg' && !agendamentos.length) seedDemo();
+
+  navegar('dashboard');
+  calRender();
+
+  // Popular selects
+  popularSelects();
+  popularHorarios();
+
+  // Sync Supabase
+  if (_sb && neg.id !== 'demo_neg') await syncTudo();
+}
+
+/* ═══════════════════════════════════════════
+   SEED DEMO
+═══════════════════════════════════════════ */
+function seedDemo() {
+  const hj = hoje();
+  const profs = [
+    { id:'p1', nome:'Ana Paula', especialidade:'Colorista', cor:'#7C3AED', comissao:40 },
+    { id:'p2', nome:'Carlos',    especialidade:'Barbeiro',  cor:'#EC4899', comissao:45 },
+  ];
+  const servs = [
+    { id:'s1', nome:'Corte feminino',    categoria:'corte',    duracao:60,  preco:80,  comissao:40 },
+    { id:'s2', nome:'Coloração',         categoria:'coloracao', duracao:120, preco:200, comissao:40 },
+    { id:'s3', nome:'Corte masculino',   categoria:'corte',    duracao:30,  preco:45,  comissao:45 },
+    { id:'s4', nome:'Barba',             categoria:'barba',    duracao:30,  preco:35,  comissao:45 },
+    { id:'s5', nome:'Hidratação',        categoria:'tratamento',duracao:60, preco:90,  comissao:40 },
+    { id:'s6', nome:'Sobrancelha',       categoria:'estetica', duracao:30,  preco:30,  comissao:40 },
+  ];
+  const clis = [
+    { id:'c1', nome:'Mariana Silva',   telefone:'(11) 98765-4321', email:'mari@email.com', origem:'instagram' },
+    { id:'c2', nome:'João Ferreira',   telefone:'(11) 91234-5678', email:'joao@email.com', origem:'indicacao' },
+    { id:'c3', nome:'Fernanda Costa',  telefone:'(11) 99876-5432', email:'fe@email.com',   origem:'google' },
+    { id:'c4', nome:'Pedro Santos',    telefone:'(11) 98765-0000', email:'',               origem:'passando' },
+    { id:'c5', nome:'Lucia Mendes',    telefone:'(11) 97654-3210', email:'lu@email.com',   origem:'instagram' },
+  ];
+  const agends = [
+    { id:'a1', data:hj, hora:'09:00', cliente:'Mariana Silva', telefone:'(11) 98765-4321', servico:'s1', servicoNome:'Corte feminino',   profissional:'p1', profNome:'Ana Paula', valor:80,  forma:'pix',    status:'confirmado' },
+    { id:'a2', data:hj, hora:'10:00', cliente:'João Ferreira', telefone:'(11) 91234-5678', servico:'s3', servicoNome:'Corte masculino',  profissional:'p2', profNome:'Carlos',    valor:45,  forma:'dinheiro',status:'confirmado' },
+    { id:'a3', data:hj, hora:'11:00', cliente:'Fernanda Costa',telefone:'(11) 99876-5432', servico:'s2', servicoNome:'Coloração',        profissional:'p1', profNome:'Ana Paula', valor:200, forma:'pix',    status:'pendente' },
+    { id:'a4', data:hj, hora:'14:00', cliente:'Pedro Santos',  telefone:'(11) 98765-0000', servico:'s4', servicoNome:'Barba',            profissional:'p2', profNome:'Carlos',    valor:35,  forma:'dinheiro',status:'concluido' },
+    { id:'a5', data:hj, hora:'15:30', cliente:'Lucia Mendes',  telefone:'(11) 97654-3210', servico:'s5', servicoNome:'Hidratação',       profissional:'p1', profNome:'Ana Paula', valor:90,  forma:'cartao_credito',status:'confirmado' },
+  ];
+
+  profissionais = profs; salvar('profissionais', profs);
+  servicos      = servs; salvar('servicos', servs);
+  clientes      = clis;  salvar('clientes', clis);
+  agendamentos  = agends;salvar('agendamentos', agends);
+}
+
+/* ═══════════════════════════════════════════
+   NAVEGAÇÃO
+═══════════════════════════════════════════ */
+const PAGE_META = {
+  dashboard:      { title: 'Dashboard',          sub: 'Visão geral do seu negócio' },
+  agenda:         { title: 'Agenda',             sub: 'Calendário de agendamentos' },
+  agendamentos:   { title: 'Agendamentos',       sub: 'Todos os agendamentos' },
+  clientes:       { title: 'Clientes',           sub: 'Cadastro e histórico' },
+  servicos:       { title: 'Serviços',           sub: 'Catálogo de serviços e preços' },
+  profissionais:  { title: 'Profissionais',      sub: 'Equipe e comissões' },
+  financeiro:     { title: 'Financeiro',         sub: 'Faturamento e caixa' },
+  relatorios:     { title: 'Relatórios',         sub: 'Análise de desempenho' },
+  perfil_publico: { title: 'Perfil Público',     sub: 'Página de agendamento online' },
+  configuracoes:  { title: 'Configurações',      sub: 'Personalize seu sistema' },
+  plano:          { title: 'Meu Plano',          sub: 'Assinatura e limites' },
+};
+
+function navegar(pg) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+
+  const id = 'page' + pg.charAt(0).toUpperCase() + pg.slice(1).replace(/_([a-z])/g, m => m[1].toUpperCase());
+  const el = $(id); if (el) el.classList.add('active');
+  var _npg=document.querySelector('[data-page="'+pg+'"]'); if(_npg) _npg.classList.add('active');
+
+  const meta = PAGE_META[pg] || { title: pg, sub: '' };
+  $('topTitle').textContent = meta.title;
+  $('topSub').textContent   = meta.sub;
+
+  // Renders
+  if (pg === 'dashboard')     dashAtualizar();
+  if (pg === 'agenda')        { calRender(); if(calDiaSel) agendaRenderDia(calDiaSel); }
+  if (pg === 'agendamentos')  agendRender();
+  if (pg === 'clientes')      clienteRender();
+  if (pg === 'servicos')      servicoRender();
+  if (pg === 'profissionais') profRender();
+  if (pg === 'financeiro')    finRender();
+  if (pg === 'relatorios')    relRender();
+  if (pg === 'perfil_publico')perfilRender();
+}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════════ */
+function dashAtualizar() {
+  const hj = hoje();
+  const mes = mesAtual();
+
+  const agHoje  = agendamentos.filter(a => a.data === hj);
+  const agMes   = agendamentos.filter(a => (a.data||'').startsWith(mes));
+  const recHoje = agHoje.filter(a => a.status === 'concluido').reduce((s,a) => s+(a.valor||0), 0);
+  const recMes  = agMes.filter(a => a.status === 'concluido').reduce((s,a) => s+(a.valor||0), 0);
+
+  $('kpiHoje').textContent      = agHoje.length;
+  $('kpiReceitaHoje').textContent = moeda(recHoje);
+  $('kpiClientes').textContent  = clientes.length;
+  $('kpiMes').textContent       = moeda(recMes);
+  $('dashData').textContent     = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+
+  // Timeline hoje
+  const tl = $('dashTimeline');
+  const ag5 = agHoje.sort((a,b)=>a.hora.localeCompare(b.hora)).slice(0,6);
+  if (!ag5.length) {
+    tl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-light)"><span style="font-size:1.5rem;display:block;margin-bottom:6px">✅</span>Sem agendamentos hoje</div>';
+  } else {
+    tl.innerHTML = ag5.map(a => `
+      <div class="tl-item">
+        <div class="tl-time">${a.hora}</div>
+        <div class="tl-client">${a.cliente}</div>
+        <div class="tl-service">${a.servicoNome||''} · ${a.profNome||''}</div>
+      </div>`).join('');
+  }
+
+  // Stats semana
+  const semana = agendamentos.filter(a => {
+    const d = new Date(a.data+'T00:00:00');
+    const ini = new Date(); ini.setDate(ini.getDate() - ini.getDay());
+    const fim = new Date(ini); fim.setDate(fim.getDate()+6);
+    return d >= ini && d <= fim;
+  });
+  $('statConfirmados').textContent = semana.filter(a=>a.status==='confirmado').length;
+  $('statPendentes').textContent   = semana.filter(a=>a.status==='pendente').length;
+  $('statConcluidos').textContent  = semana.filter(a=>a.status==='concluido').length;
+  $('statCancelados').textContent  = semana.filter(a=>a.status==='cancelado').length;
+
+  // Top serviços
+  const svcCount = {};
+  agendamentos.forEach(a => { if(a.servicoNome) svcCount[a.servicoNome] = (svcCount[a.servicoNome]||0)+1; });
+  const topSvc = Object.entries(svcCount).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  const maxSvc = (topSvc[0] && topSvc[0][1]) || 1;
+  $('dashTopServicos').innerHTML = topSvc.length
+    ? topSvc.map(([n,c]) => `
+      <div class="stat-row">
+        <span class="stat-icon">✂️</span>
+        <span class="stat-label">${n}</span>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="width:${(c/maxSvc*100).toFixed(0)}%"></div></div>
+        <span class="stat-val">${c}</span>
+      </div>`).join('')
+    : '<div style="color:var(--text-light);font-size:.8rem;text-align:center;padding:12px">Sem dados</div>';
+}
+
+/* ═══════════════════════════════════════════
+   CALENDÁRIO
+═══════════════════════════════════════════ */
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function calNavegar(dir) { calMes += dir; if(calMes>11){calMes=0;calAno++;} if(calMes<0){calMes=11;calAno--;} calRender(); }
+
+function calRender() {
+  $('calMesAno').textContent = `${MESES[calMes]} ${calAno}`;
+  const grid = $('calGrid');
+
+  // Limpar dias (manter cabeçalhos)
+  while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+
+  const primeiroDia = new Date(calAno, calMes, 1).getDay();
+  const diasNoMes   = new Date(calAno, calMes+1, 0).getDate();
+  const diasMesAnt  = new Date(calAno, calMes, 0).getDate();
+  const hoje_str    = hoje();
+
+  // Dias mês anterior
+  for (let i = primeiroDia-1; i >= 0; i--) {
+    const div = document.createElement('div');
+    div.className = 'cal-day other-month';
+    div.textContent = diasMesAnt - i;
+    grid.appendChild(div);
+  }
+
+  // Dias do mês
+  for (let d = 1; d <= diasNoMes; d++) {
+    const dataStr = `${calAno}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const temAg = agendamentos.some(a => a.data === dataStr);
+    const div = document.createElement('div');
+    div.className = 'cal-day' + (dataStr === hoje_str ? ' today' : '') + (dataStr === calDiaSel ? ' selected' : '');
+    div.innerHTML = d + (temAg ? '<div class="cal-dot"></div>' : '');
+    div.onclick = () => {
+      calDiaSel = dataStr;
+      calRender();
+      agendaRenderDia(dataStr);
+    };
+    grid.appendChild(div);
+  }
+
+  // Completar grade
+  const total = primeiroDia + diasNoMes;
+  const resto = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let d = 1; d <= resto; d++) {
+    const div = document.createElement('div');
+    div.className = 'cal-day other-month';
+    div.textContent = d;
+    grid.appendChild(div);
+  }
+}
+
+function agendaRenderDia(data) {
+  const d = new Date(data + 'T00:00:00');
+  $('agendaDiaSub').textContent = d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+  const lista = agendamentos.filter(a => a.data === data).sort((a,b) => a.hora.localeCompare(b.hora));
+  const slots = $('agendaSlots');
+
+  if (!lista.length) {
+    slots.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-light)"><span style="display:block;font-size:1.5rem;margin-bottom:6px">✅</span>Sem agendamentos neste dia<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="abrirNovoAgendamento()">+ Agendar</button></div>';
+    return;
+  }
+
+  const COR = { confirmado:'#7C3AED', pendente:'#D97706', concluido:'#059669', cancelado:'#DC2626' };
+  slots.innerHTML = lista.map(a => `
+    <div class="slot-item" onclick="editarAgendamento('${a.id}')">
+      <div class="slot-color" style="background:${(profissionais.find(function(p){return p.id===a.profissional})||{}).cor||COR[a.status]||'#7C3AED'}"></div>
+      <div class="slot-info">
+        <div class="slot-time">${a.hora}${a.duracao ? ' · '+a.duracao+'min' : ''}</div>
+        <div class="slot-client">${a.cliente}</div>
+        <div class="slot-service">${a.servicoNome||''} · ${a.profNome||''}</div>
+      </div>
+      <span class="slot-badge badge-${a.status}">${a.status}</span>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════
+   AGENDAMENTOS
+═══════════════════════════════════════════ */
+function agendRender() {
+  const q  = (($('agendSearch') && $('agendSearch').value)||'').toLowerCase();
+  const fs = ($('agendFiltroStatus') && $('agendFiltroStatus').value) || '';
+  const fp = ($('agendFiltroProfissional') && $('agendFiltroProfissional').value) || '';
+
+  let lista = agendamentos.filter(a =>
+    (!q  || a.cliente.toLowerCase().includes(q) || (a.servicoNome||'').toLowerCase().includes(q)) &&
+    (!fs || a.status === fs) &&
+    (!fp || a.profissional === fp)
+  ).sort((a,b) => (b.data+b.hora).localeCompare(a.data+a.hora));
+
+  pagControle(lista.length, 'agend');
+  const page = pagSlice(lista, 'agend');
+  const tbody = $('agendTbody');
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><span class="empty-ico">🗓️</span>Nenhum agendamento encontrado</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = page.map(function(a) {
+    var d = new Date(a.data+'T00:00:00').toLocaleDateString('pt-BR');
+    var tel = a.telefone ? '<br><span style="font-size:.72rem;color:var(--text-muted)">'+a.telefone+'</span>' : '';
+    return '<tr>'
+      +'<td><strong>'+d+'</strong><br><span style="font-family:var(--mono);font-size:.72rem;color:var(--text-muted)">'+a.hora+'</span></td>'
+      +'<td><strong>'+a.cliente+'</strong>'+tel+'</td>'
+      +'<td>'+(a.servicoNome||'&#8212;')+'</td>'
+      +'<td>'+(a.profNome||'&#8212;')+'</td>'
+      +'<td style="font-weight:700;color:var(--accent)">'+moeda(a.valor)+'</td>'
+      +'<td><span class="slot-badge badge-'+a.status+'">'+a.status+'</span></td>'
+      +'<td>'
+      +'<button class="btn btn-ghost btn-icon btn-sm" onclick="editarAgendamento(\''+a.id+'\')" title="Editar">&#9998;</button> '
+      +'<button class="btn btn-danger btn-icon btn-sm" onclick="excluirAgendamento(\''+a.id+'\')" title="Excluir">&#128465;</button>'
+      +'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+function abrirNovoAgendamento() {
+  $('agendEditId').value = '';
+  $('modalAgendTitulo').textContent = '📅 Novo Agendamento';
+  $('agendData').value = hoje();
+  $('agendHora').value = '';
+  $('agendCliente').value = '';
+  $('agendTel').value = '';
+  $('agendObs').value = '';
+  $('agendStatus').value = 'pendente';
+  popularSelects();
+  $('modalAgend').classList.add('open');
+}
+
+function editarAgendamento(id) {
+  const a = agendamentos.find(x => x.id === id);
+  if (!a) return;
+  $('agendEditId').value = id;
+  $('modalAgendTitulo').textContent = '✏️ Editar Agendamento';
+  $('agendData').value     = a.data;
+  $('agendHora').value     = a.hora;
+  $('agendCliente').value  = a.cliente;
+  $('agendTel').value      = a.telefone||'';
+  $('agendObs').value      = a.obs||'';
+  $('agendStatus').value   = a.status;
+  $('agendForma').value    = a.forma||'pix';
+  popularSelects();
+  $('agendServico').value      = a.servico||'';
+  $('agendProfissional').value = a.profissional||'';
+  $('modalAgend').classList.add('open');
+}
+
+function salvarAgendamento() {
+  const data     = $('agendData').value;
+  const hora     = $('agendHora').value;
+  const cliente  = $('agendCliente').value.trim();
+  const tel      = $('agendTel').value.trim();
+  const servicoId= $('agendServico').value;
+  const profId   = $('agendProfissional').value;
+  const forma    = $('agendForma').value;
+  const status   = $('agendStatus').value;
+  const obs      = $('agendObs').value.trim();
+
+  if (!data||!hora||!cliente) { toast('⚠️ Preencha data, hora e cliente'); return; }
+
+  const servico = servicos.find(s => s.id === servicoId);
+  const prof    = profissionais.find(p => p.id === profId);
+
+  const editId = $('agendEditId').value;
+  const obj = {
+    id: editId || uid(),
+    company_id: currentNegocio.id,
+    data, hora, cliente, telefone: tel,
+    servico: servicoId, servicoNome: (servico && servico.nome)||'',
+    profissional: profId, profNome: (prof && prof.nome)||'',
+    valor: (servico && servico.preco) || 0,
+    forma, status, obs,
+  };
+
+  if (editId) {
+    const idx = agendamentos.findIndex(a => a.id === editId);
+    if (idx >= 0) agendamentos[idx] = obj;
+  } else {
+    agendamentos.unshift(obj);
+  }
+
+  salvar('agendamentos', agendamentos);
+  fecharModal('modalAgend');
+  toast('✅ Agendamento salvo!');
+  agendRender();
+  dashAtualizar();
+  calRender();
+  if (calDiaSel === data) agendaRenderDia(data);
+}
+
+function excluirAgendamento(id) {
+  if (!confirm('Excluir este agendamento?')) return;
+  agendamentos = agendamentos.filter(a => a.id !== id);
+  salvar('agendamentos', agendamentos);
+  agendRender();
+  dashAtualizar();
+  calRender();
+  toast('🗑 Agendamento excluído');
+}
+
+/* ═══════════════════════════════════════════
+   CLIENTES
+═══════════════════════════════════════════ */
+function clienteRender() {
+  const q = (($('clienteSearch') && $('clienteSearch').value)||'').toLowerCase();
+  let lista = clientes.filter(c =>
+    !q || c.nome.toLowerCase().includes(q) || (c.telefone||'').includes(q)
+  ).sort((a,b) => a.nome.localeCompare(b.nome));
+
+  pagControle(lista.length, 'cliente');
+  const page = pagSlice(lista, 'cliente');
+  const tbody = $('clienteTbody');
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><span class="empty-ico">👥</span>Nenhum cliente cadastrado</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = page.map(function(c) {
+    var visitas = agendamentos.filter(function(a){return a.cliente===c.nome;}).length;
+    var ultArr = agendamentos.filter(function(a){return a.cliente===c.nome;}).sort(function(x,y){return y.data.localeCompare(x.data);});
+    var ultData = ultArr[0] ? new Date(ultArr[0].data+'T00:00:00').toLocaleDateString('pt-BR') : '&#8212;';
+    return '<tr>'
+      +'<td><strong>'+c.nome+'</strong></td>'
+      +'<td>'+(c.telefone||'&#8212;')+'</td>'
+      +'<td>'+(c.email||'&#8212;')+'</td>'
+      +'<td style="text-align:center">'+visitas+'</td>'
+      +'<td>'+ultData+'</td>'
+      +'<td>'
+      +'<button class="btn btn-ghost btn-icon btn-sm" onclick="editarCliente(\''+c.id+'\')">&#9998;</button> '
+      +'<button class="btn btn-danger btn-icon btn-sm" onclick="excluirCliente(\''+c.id+'\')">&#128465;</button>'
+      +'</td>'
+      +'</tr>';
+  }).join('');
+
+  // Datalist
+  const dl = $('clientesSugg');
+  if (dl) dl.innerHTML = clientes.map(c => `<option value="${c.nome}">`).join('');
+}
+
+function abrirNovoCliente() {
+  $('clienteEditId').value = '';
+  $('modalClienteTitulo').textContent = '👥 Novo Cliente';
+  ['clienteNome','clienteTel','clienteEmail','clienteNasc','clienteObs'].forEach(id => $(id).value = '');
+  $('clienteOrigem').value = '';
+  $('modalCliente').classList.add('open');
+}
+
+function editarCliente(id) {
+  const c = clientes.find(x => x.id === id);
+  if (!c) return;
+  $('clienteEditId').value = id;
+  $('modalClienteTitulo').textContent = '✏️ Editar Cliente';
+  $('clienteNome').value   = c.nome;
+  $('clienteTel').value    = c.telefone||'';
+  $('clienteEmail').value  = c.email||'';
+  $('clienteNasc').value   = c.nascimento||'';
+  $('clienteObs').value    = c.obs||'';
+  $('clienteOrigem').value = c.origem||'';
+  $('modalCliente').classList.add('open');
+}
+
+function salvarCliente() {
+  const nome = $('clienteNome').value.trim();
+  if (!nome) { toast('⚠️ Informe o nome do cliente'); return; }
+  const editId = $('clienteEditId').value;
+  const obj = {
+    id: editId || uid(),
+    company_id: currentNegocio.id,
+    nome, telefone: $('clienteTel').value.trim(),
+    email: $('clienteEmail').value.trim(),
+    nascimento: $('clienteNasc').value,
+    obs: $('clienteObs').value.trim(),
+    origem: $('clienteOrigem').value,
+  };
+  if (editId) { const i = clientes.findIndex(c=>c.id===editId); if(i>=0) clientes[i]=obj; }
+  else clientes.push(obj);
+  salvar('clientes', clientes);
+  fecharModal('modalCliente');
+  toast('✅ Cliente salvo!');
+  clienteRender();
+}
+
+function excluirCliente(id) {
+  if (!confirm('Excluir este cliente?')) return;
+  clientes = clientes.filter(c => c.id !== id);
+  salvar('clientes', clientes);
+  clienteRender();
+  toast('🗑 Cliente excluído');
+}
+
+/* ═══════════════════════════════════════════
+   SERVIÇOS
+═══════════════════════════════════════════ */
+const CAT_ICON = { corte:'✂️', coloracao:'🎨', tratamento:'💆', estetica:'💅', barba:'🧔', outros:'📋' };
+
+function servicoRender() {
+  const tbody = $('servicoTbody');
+  if (!servicos.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><span class="empty-ico">✂️</span>Nenhum serviço cadastrado</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = servicos.map(function(s) {
+    return '<tr>'
+      +'<td><strong>'+(CAT_ICON[s.categoria]||'')+ ' '+s.nome+'</strong></td>'
+      +'<td>'+s.categoria+'</td>'
+      +'<td>'+(s.duracao||60)+' min</td>'
+      +'<td style="font-weight:700;color:var(--accent)">'+moeda(s.preco)+'</td>'
+      +'<td><span style="color:var(--success)">Ativo</span></td>'
+      +'<td>'
+      +'<button class="btn btn-ghost btn-icon btn-sm" onclick="editarServico(\''+s.id+'\')">&#9998;</button> '
+      +'<button class="btn btn-danger btn-icon btn-sm" onclick="excluirServico(\''+s.id+'\')">&#128465;</button>'
+      +'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+function abrirNovoServico() {
+  $('servicoEditId').value = '';
+  $('modalServicoTitulo').textContent = '✂️ Novo Serviço';
+  ['servicoNome','servicoDesc'].forEach(id=>$(id).value='');
+  $('servicoDuracao').value = 60; $('servicoPreco').value=''; $('servicoComissao').value=40;
+  $('servicoCateg').value = 'corte';
+  $('modalServico').classList.add('open');
+}
+
+function editarServico(id) {
+  const s = servicos.find(x=>x.id===id); if(!s) return;
+  $('servicoEditId').value = id;
+  $('modalServicoTitulo').textContent = '✏️ Editar Serviço';
+  $('servicoNome').value     = s.nome;
+  $('servicoCateg').value    = s.categoria;
+  $('servicoDuracao').value  = s.duracao;
+  $('servicoPreco').value    = s.preco;
+  $('servicoComissao').value = s.comissao;
+  $('servicoDesc').value     = s.descricao||'';
+  $('modalServico').classList.add('open');
+}
+
+function salvarServico() {
+  const nome = $('servicoNome').value.trim();
+  if (!nome) { toast('⚠️ Informe o nome do serviço'); return; }
+  const editId = $('servicoEditId').value;
+  const obj = {
+    id: editId || uid(),
+    company_id: currentNegocio.id,
+    nome, categoria: $('servicoCateg').value,
+    duracao: parseInt($('servicoDuracao').value)||60,
+    preco: parseFloat($('servicoPreco').value)||0,
+    comissao: parseInt($('servicoComissao').value)||40,
+    descricao: $('servicoDesc').value.trim(),
+  };
+  if (editId) { const i=servicos.findIndex(s=>s.id===editId); if(i>=0) servicos[i]=obj; }
+  else servicos.push(obj);
+  salvar('servicos', servicos);
+  fecharModal('modalServico');
+  toast('✅ Serviço salvo!');
+  servicoRender();
+  popularSelects();
+}
+
+function excluirServico(id) {
+  if (!confirm('Excluir este serviço?')) return;
+  servicos = servicos.filter(s=>s.id!==id);
+  salvar('servicos', servicos);
+  servicoRender();
+  toast('🗑 Serviço excluído');
+}
+
+/* ═══════════════════════════════════════════
+   PROFISSIONAIS
+═══════════════════════════════════════════ */
+function profRender() {
+  const grid = $('profGrid');
+  if (!profissionais.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-light)"><span style="font-size:2rem;display:block;margin-bottom:8px">👤</span>Nenhum profissional cadastrado</div>`;
+    return;
+  }
+  grid.innerHTML = profissionais.map(p => {
+    const ags = agendamentos.filter(a => a.profissional === p.id);
+    const recv = ags.filter(a=>a.status==='concluido').reduce((s,a)=>s+(a.valor||0)*((a.comissao||p.comissao||40)/100),0);
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow-sm)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="width:42px;height:42px;border-radius:50%;background:${p.cor||'#7C3AED'};display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;color:white;flex-shrink:0">${p.nome[0]}</div>
+        <div>
+          <div style="font-weight:800;font-size:.88rem">${p.nome}</div>
+          <div style="font-size:.72rem;color:var(--text-muted)">${p.especialidade||'Profissional'}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <span style="background:var(--accent-light);color:var(--accent);padding:2px 10px;border-radius:999px;font-size:.68rem;font-weight:700">${ags.length} agendamentos</span>
+        <span style="background:var(--success-bg);color:var(--success);padding:2px 10px;border-radius:999px;font-size:.68rem;font-weight:700">${p.comissao||40}% comissão</span>
+      </div>
+      <div style="font-size:.78rem;color:var(--text-muted)">Receita comissão: <strong style="color:var(--text)">${moeda(recv)}</strong></div>
+      <div style="display:flex;gap:6px;margin-top:12px">
+        <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center" onclick="editarProfissional('${p.id}')">✏️ Editar</button>
+        <button class="btn btn-danger btn-icon btn-sm" onclick="excluirProfissional('${p.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function abrirNovoProfissional() {
+  $('profEditId').value = '';
+  $('modalProfTitulo').textContent = '👤 Novo Profissional';
+  ['profNome','profEspec','profTel','profEmail'].forEach(id=>$(id).value='');
+  $('profComissao').value = 40; $('profCor').value = '#7C3AED';
+  $('modalProf').classList.add('open');
+}
+
+function editarProfissional(id) {
+  const p = profissionais.find(x=>x.id===id); if(!p) return;
+  $('profEditId').value = id;
+  $('modalProfTitulo').textContent = '✏️ Editar Profissional';
+  $('profNome').value    = p.nome;
+  $('profEspec').value   = p.especialidade||'';
+  $('profTel').value     = p.telefone||'';
+  $('profEmail').value   = p.email||'';
+  $('profComissao').value= p.comissao||40;
+  $('profCor').value     = p.cor||'#7C3AED';
+  $('modalProf').classList.add('open');
+}
+
+function salvarProfissional() {
+  const nome = $('profNome').value.trim();
+  if (!nome) { toast('⚠️ Informe o nome'); return; }
+  const editId = $('profEditId').value;
+  const obj = {
+    id: editId || uid(),
+    company_id: currentNegocio.id,
+    nome, especialidade: $('profEspec').value.trim(),
+    telefone: $('profTel').value.trim(),
+    email: $('profEmail').value.trim(),
+    comissao: parseInt($('profComissao').value)||40,
+    cor: $('profCor').value,
+  };
+  if (editId) { const i=profissionais.findIndex(p=>p.id===editId); if(i>=0) profissionais[i]=obj; }
+  else profissionais.push(obj);
+  salvar('profissionais', profissionais);
+  fecharModal('modalProf');
+  toast('✅ Profissional salvo!');
+  profRender();
+  popularSelects();
+}
+
+function excluirProfissional(id) {
+  if (!confirm('Excluir este profissional?')) return;
+  profissionais = profissionais.filter(p=>p.id!==id);
+  salvar('profissionais', profissionais);
+  profRender();
+  toast('🗑 Profissional excluído');
+}
+
+/* ═══════════════════════════════════════════
+   FINANCEIRO
+═══════════════════════════════════════════ */
+function finRender() {
+  const filtroMes = ($('finFiltroMes') && $('finFiltroMes').value) || '';
+  let lista = agendamentos
+    .filter(a => a.status === 'concluido')
+    .filter(a => !filtroMes || (a.data||'').startsWith(filtroMes))
+    .sort((a,b) => (b.data+b.hora).localeCompare(a.data+a.hora));
+
+  const totalMes = lista.reduce((s,a)=>s+(a.valor||0), 0);
+  const hoje_str = hoje();
+  const hj = lista.filter(a=>a.data===hoje_str).reduce((s,a)=>s+(a.valor||0),0);
+  const ticket = lista.length ? totalMes/lista.length : 0;
+
+  // Semana
+  const semIni = new Date(); semIni.setDate(semIni.getDate()-semIni.getDay());
+  const semFim = new Date(semIni); semFim.setDate(semFim.getDate()+6);
+  const semanaV = lista.filter(a => {
+    const d = new Date(a.data+'T00:00:00');
+    return d >= semIni && d <= semFim;
+  }).reduce((s,a)=>s+(a.valor||0),0);
+
+  $('finHoje').textContent   = moeda(hj);
+  $('finSemana').textContent = moeda(semanaV);
+  $('finMes').textContent    = moeda(totalMes);
+  $('finTicket').textContent = moeda(ticket);
+
+  pagControle(lista.length, 'fin');
+  const page = pagSlice(lista, 'fin');
+  const tbody = $('finTbody');
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><span class="empty-ico">💰</span>Sem lançamentos no período</td></tr>`;
+    return;
+  }
+
+  const FORMA = { pix:'PIX', dinheiro:'Dinheiro', cartao_debito:'Débito', cartao_credito:'Crédito' };
+  tbody.innerHTML = page.map(function(a) {
+    return '<tr>'
+      +'<td>'+new Date(a.data+'T00:00:00').toLocaleDateString('pt-BR')+' '+a.hora+'</td>'
+      +'<td>'+a.cliente+'</td>'
+      +'<td>'+(a.servicoNome||'&#8212;')+'</td>'
+      +'<td>'+(a.profNome||'&#8212;')+'</td>'
+      +'<td>'+(FORMA[a.forma]||a.forma||'&#8212;')+'</td>'
+      +'<td style="font-weight:800;color:var(--success)">'+moeda(a.valor)+'</td>'
+      +'<td><span class="slot-badge badge-concluido">conclui&#769;do</span></td>'
+      +'</tr>';
+  }).join('');
+}
+
+function exportFinCSV() {
+  const lista = agendamentos.filter(a=>a.status==='concluido');
+  const rows  = [['Data','Hora','Cliente','Servico','Profissional','Forma','Valor'],
+    ...lista.map(a=>[a.data,a.hora,a.cliente,a.servicoNome||'',a.profNome||'',a.forma||'',a.valor||0])];
+  const csv = rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const lnk = document.createElement('a');
+  lnk.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  lnk.download = 'financeiro.csv';
+  lnk.click();
+  toast('✅ CSV exportado!');
+}
+
+/* ═══════════════════════════════════════════
+   RELATÓRIOS
+═══════════════════════════════════════════ */
+function relRender() {
+  // Top serviços
+  const svcMap = {};
+  agendamentos.forEach(a=>{ if(a.servicoNome) svcMap[a.servicoNome]=(svcMap[a.servicoNome]||0)+(a.valor||0); });
+  const topSvc = Object.entries(svcMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  $('relTopServicos').innerHTML = topSvc.length
+    ? topSvc.map(([n,v],i)=>`<div class="stat-row"><span class="stat-icon">${['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣'][i]}</span><span class="stat-label">${n}</span><span class="stat-val">${moeda(v)}</span></div>`).join('')
+    : '<div style="color:var(--text-light);font-size:.8rem;text-align:center;padding:12px">Sem dados</div>';
+
+  // Top profissionais
+  const profMap = {};
+  agendamentos.filter(a=>a.status==='concluido').forEach(a=>{ if(a.profNome) profMap[a.profNome]=(profMap[a.profNome]||0)+(a.valor||0); });
+  const topProf = Object.entries(profMap).sort((a,b)=>b[1]-a[1]);
+  $('relTopProfissionais').innerHTML = topProf.length
+    ? topProf.map(([n,v],i)=>`<div class="stat-row"><span class="stat-icon">👤</span><span class="stat-label">${n}</span><span class="stat-val">${moeda(v)}</span></div>`).join('')
+    : '<div style="color:var(--text-light);font-size:.8rem;text-align:center;padding:12px">Sem dados</div>';
+
+  // Por dia da semana
+  const DIAS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const diaCount = Array(7).fill(0);
+  agendamentos.forEach(a=>{ const d=new Date(a.data+'T00:00:00').getDay(); if(!isNaN(d)) diaCount[d]++; });
+  const maxDia = Math.max(...diaCount,1);
+  $('relDiaSemana').innerHTML = DIAS.map((n,i)=>`
+    <div class="stat-row">
+      <span class="stat-label">${n}</span>
+      <div class="stat-bar-wrap"><div class="stat-bar" style="width:${(diaCount[i]/maxDia*100).toFixed(0)}%"></div></div>
+      <span class="stat-val">${diaCount[i]}</span>
+    </div>`).join('');
+
+  // Receita por mês
+  const mesMap = {};
+  agendamentos.filter(a=>a.status==='concluido').forEach(a=>{
+    const m = (a.data||'').slice(0,7);
+    if (m) mesMap[m] = (mesMap[m]||0)+(a.valor||0);
+  });
+  const meses = Object.entries(mesMap).sort().slice(-6);
+  const maxMes = Math.max(...meses.map(m=>m[1]),1);
+  $('relReceitaMes').innerHTML = meses.length
+    ? meses.map(([m,v])=>`
+      <div class="stat-row">
+        <span class="stat-label">${m}</span>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="width:${(v/maxMes*100).toFixed(0)}%"></div></div>
+        <span class="stat-val">${moeda(v)}</span>
+      </div>`).join('')
+    : '<div style="color:var(--text-light);font-size:.8rem;text-align:center;padding:12px">Sem dados</div>';
+}
+
+/* ═══════════════════════════════════════════
+   PERFIL PÚBLICO
+═══════════════════════════════════════════ */
+function perfilRender() {
+  const cfg = configNegocio;
+  $('ppNome').value    = cfg.nome || (currentNegocio && currentNegocio.name) || '';
+  $('ppDesc').value    = cfg.desc || '';
+  $('ppTel').value     = cfg.tel  || '';
+  $('ppEndereco').value= cfg.end  || '';
+  $('ppInsta').value   = cfg.insta|| '';
+  $('ppHorario').value = cfg.hor  || '';
+  atualizarPreview();
+}
+
+function atualizarPreview() {
+  const nome = ($('ppNome') && $('ppNome').value) || (currentNegocio && currentNegocio.name) || 'Seu negócio';
+  $('ppNomePreview').textContent = nome;
+  $('ppDescPreview').textContent = ($('ppDesc') && $('ppDesc').value) || 'Descrição do estabelecimento';
+  $('ppAvPreview').textContent   = nome[0].toUpperCase();
+  const slug = nome.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  $('ppLink').textContent = `agendapro.com.br/agendar/${slug}`;
+
+  $('ppServicosPreview').innerHTML = servicos.slice(0,4).map(s=>
+    `<span class="servico-chip">${s.nome}</span>`
+  ).join('');
+}
+
+function salvarPerfil() {
+  configNegocio = {
+    ...configNegocio,
+    nome:  $('ppNome').value.trim(),
+    desc:  $('ppDesc').value.trim(),
+    tel:   $('ppTel').value.trim(),
+    end:   $('ppEndereco').value.trim(),
+    insta: $('ppInsta').value.trim(),
+    hor:   $('ppHorario').value.trim(),
+  };
+  localStorage.setItem(getKey('config'), JSON.stringify(configNegocio));
+  $('sidebarBiz').textContent = configNegocio.nome || currentNegocio.name;
+  atualizarPreview();
+  toast('✅ Perfil salvo!');
+}
+
+function copiarLink() {
+  const link = $('ppLink').textContent;
+  navigator.clipboard.writeText(link).then(() => toast('📋 Link copiado!'));
+}
+
+/* ═══════════════════════════════════════════
+   CONFIGURAÇÕES
+═══════════════════════════════════════════ */
+function popularHorarios() {
+  const DIAS = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+  const padroes = ['09:00','19:00','09:00','19:00','09:00','19:00','09:00','19:00','09:00','19:00','09:00','17:00','',''];
+  const cfg = configNegocio.horarios || {};
+
+  $('horariosFuncDiv').innerHTML = DIAS.map((d,i) => {
+    const ab = (cfg[d] && cfg[d].ativo !== undefined ? cfg[d].ativo : undefined) !== undefined ? cfg[d].ativo : (i < 6);
+    const h1 = (cfg[d] && cfg[d].abertura) || padroes[i*2] || '';
+    const h2 = (cfg[d] && cfg[d].fechamento) || padroes[i*2+1] || '';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <input type="checkbox" id="hor_ativo_${i}" ${ab&&h1?'checked':''} onchange="document.getElementById('hor_hr_${i}').style.opacity=this.checked?'1':'0.4'" style="cursor:pointer">
+      <label for="hor_ativo_${i}" style="width:70px;font-size:.8rem;font-weight:600;color:var(--text);text-transform:none;letter-spacing:0">${d}</label>
+      <div id="hor_hr_${i}" style="display:flex;gap:6px;align-items:center;opacity:${ab&&h1?'1':'0.4'}">
+        <input type="time" id="hor_ab_${i}" value="${h1}" style="padding:5px 8px;font-size:.78rem;border:1px solid var(--border);border-radius:7px;outline:none">
+        <span style="font-size:.72rem;color:var(--text-muted)">às</span>
+        <input type="time" id="hor_fe_${i}" value="${h2}" style="padding:5px 8px;font-size:.78rem;border:1px solid var(--border);border-radius:7px;outline:none">
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function salvarHorarios() {
+  const DIAS = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+  const horarios = {};
+  DIAS.forEach((d,i) => {
+    horarios[d] = {
+      ativo: ($('hor_ativo_'+i) && $('hor_ativo_'+i).checked) || false,
+      abertura: ($('hor_ab_'+i) && $('hor_ab_'+i).value) || '',
+      fechamento: ($('hor_fe_'+i) && $('hor_fe_'+i).value) || '',
+    };
+  });
+  configNegocio.horarios = horarios;
+  localStorage.setItem(getKey('config'), JSON.stringify(configNegocio));
+  toast('✅ Horários salvos!');
+}
+
+function salvarConfig() {
+  configNegocio = {
+    ...configNegocio,
+    nomeGeral: $('cfgNome').value.trim(),
+    intervalo: parseInt($('cfgIntervalo').value)||30,
+    fuso: $('cfgFuso').value,
+    msgConfirmacao: $('cfgMsgConfirmacao').value,
+    msgLembrete: $('cfgMsgLembrete').value,
+  };
+  localStorage.setItem(getKey('config'), JSON.stringify(configNegocio));
+  toast('✅ Configurações salvas!');
+}
+
+/* ═══════════════════════════════════════════
+   POPULAR SELECTS
+═══════════════════════════════════════════ */
+function popularSelects() {
+  const svcSel = $('agendServico');
+  if (svcSel) svcSel.innerHTML = '<option value="">Selecione...</option>' +
+    servicos.map(s=>`<option value="${s.id}">${s.nome} — ${moeda(s.preco)}</option>`).join('');
+
+  const profSel = $('agendProfissional');
+  if (profSel) profSel.innerHTML = '<option value="">Selecione...</option>' +
+    profissionais.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+
+  const filtProf = $('agendFiltroProfissional');
+  if (filtProf) filtProf.innerHTML = '<option value="">Todos os profissionais</option>' +
+    profissionais.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+
+  const finMes = $('finFiltroMes');
+  if (finMes && finMes.children.length < 3) {
+    const meses = [...new Set(agendamentos.map(a=>(a.data||'').slice(0,7)).filter(Boolean))].sort().reverse();
+    finMes.innerHTML = '<option value="">Todos os períodos</option>' +
+      meses.map(m=>`<option value="${m}">${m}</option>`).join('');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   SUPABASE SYNC
+═══════════════════════════════════════════ */
+async function syncTudo() {
+  if (!_sb || !(currentNegocio && currentNegocio.id) || currentNegocio.id === 'demo_neg') return;
+  const cid = currentNegocio.id;
+  try {
+    const [ag, cl, sv, pr] = await Promise.all([
+      _sb.from('agendamentos').select('*').eq('company_id', cid),
+      _sb.from('clientes').select('*').eq('company_id', cid),
+      _sb.from('servicos').select('*').eq('company_id', cid),
+      _sb.from('profissionais').select('*').eq('company_id', cid),
+    ]);
+    if ((ag.data && ag.data.length)) { agendamentos  = ag.data; salvar('agendamentos', agendamentos); }
+    if ((cl.data && cl.data.length)) { clientes      = cl.data; salvar('clientes', clientes); }
+    if ((sv.data && sv.data.length)) { servicos      = sv.data; salvar('servicos', servicos); }
+    if ((pr.data && pr.data.length)) { profissionais = pr.data; salvar('profissionais', profissionais); }
+    dashAtualizar();
+  } catch(e) { console.warn('[AgendaPro] sync falhou:', e.message); }
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// Atualizar preview do perfil ao digitar
+['ppNome','ppDesc'].forEach(id => {
+  setTimeout(() => {
+    const el = $(id);
+    if (el) el.addEventListener('input', atualizarPreview);
+  }, 1000);
+});
+</script>
+</body>
+</html>
